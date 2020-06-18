@@ -17,7 +17,7 @@ const fakeClient = {
 // These tests are specific to the mongo storage adapter + mongo storage format
 // and will eventually be moved into their own repo
 describe_only_db('mongo')('MongoStorageAdapter', () => {
-  beforeEach(done => {
+  beforeEach((done) => {
     new MongoStorageAdapter({ uri: databaseURI })
       .deleteAllClasses()
       .then(done, fail);
@@ -60,12 +60,12 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
     );
   });
 
-  it('stores objectId in _id', done => {
+  it('stores objectId in _id', (done) => {
     const adapter = new MongoStorageAdapter({ uri: databaseURI });
     adapter
       .createObject('Foo', { fields: {} }, { objectId: 'abcde' })
       .then(() => adapter._rawFind('Foo', {}))
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const obj = results[0];
         expect(obj._id).toEqual('abcde');
@@ -74,7 +74,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
       });
   });
 
-  it('find succeeds when query is within maxTimeMS', done => {
+  it('find succeeds when query is within maxTimeMS', (done) => {
     const maxTimeMS = 250;
     const adapter = new MongoStorageAdapter({
       uri: databaseURI,
@@ -87,13 +87,13 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
       )
       .then(
         () => done(),
-        err => {
+        (err) => {
           done.fail(`maxTimeMS should not affect fast queries ${err}`);
         }
       );
   });
 
-  it('find fails when query exceeds maxTimeMS', done => {
+  it('find fails when query exceeds maxTimeMS', (done) => {
     const maxTimeMS = 250;
     const adapter = new MongoStorageAdapter({
       uri: databaseURI,
@@ -108,7 +108,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         () => {
           done.fail('Find succeeded despite taking too long!');
         },
-        err => {
+        (err) => {
           expect(err.name).toEqual('MongoError');
           expect(err.code).toEqual(50);
           expect(err.message).toMatch('operation exceeded time limit');
@@ -117,7 +117,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
       );
   });
 
-  it('stores pointers with a _p_ prefix', done => {
+  it('stores pointers with a _p_ prefix', (done) => {
     const obj = {
       objectId: 'bar',
       aPointer: {
@@ -139,7 +139,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         obj
       )
       .then(() => adapter._rawFind('APointerDarkly', {}))
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const output = results[0];
         expect(typeof output._id).toEqual('string');
@@ -150,14 +150,14 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
       });
   });
 
-  it('handles object and subdocument', done => {
+  it('handles object and subdocument', (done) => {
     const adapter = new MongoStorageAdapter({ uri: databaseURI });
     const schema = { fields: { subdoc: { type: 'Object' } } };
     const obj = { subdoc: { foo: 'bar', wu: 'tan' } };
     adapter
       .createObject('MyClass', schema, obj)
       .then(() => adapter._rawFind('MyClass', {}))
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const mob = results[0];
         expect(typeof mob.subdoc).toBe('object');
@@ -167,7 +167,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         return adapter.findOneAndUpdate('MyClass', schema, {}, obj);
       })
       .then(() => adapter._rawFind('MyClass', {}))
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const mob = results[0];
         expect(typeof mob.subdoc).toBe('object');
@@ -177,7 +177,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
       });
   });
 
-  it('handles creating an array, object, date', done => {
+  it('handles creating an array, object, date', (done) => {
     const adapter = new MongoStorageAdapter({ uri: databaseURI });
     const obj = {
       array: [1, 2, 3],
@@ -197,7 +197,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
     adapter
       .createObject('MyClass', schema, obj)
       .then(() => adapter._rawFind('MyClass', {}))
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const mob = results[0];
         expect(mob.array instanceof Array).toBe(true);
@@ -205,7 +205,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         expect(mob.date instanceof Date).toBe(true);
         return adapter.find('MyClass', schema, {}, {});
       })
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const mob = results[0];
         expect(mob.array instanceof Array).toBe(true);
@@ -214,14 +214,14 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         expect(mob.date.iso).toBe('2016-05-26T20:55:01.154Z');
         done();
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error);
         fail();
         done();
       });
   });
 
-  it('handles updating a single object with array, object date', done => {
+  it('handles updating a single object with array, object date', (done) => {
     const adapter = new MongoStorageAdapter({ uri: databaseURI });
 
     const schema = {
@@ -235,7 +235,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
     adapter
       .createObject('MyClass', schema, {})
       .then(() => adapter._rawFind('MyClass', {}))
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const update = {
           array: [1, 2, 3],
@@ -248,7 +248,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         const query = {};
         return adapter.findOneAndUpdate('MyClass', schema, query, update);
       })
-      .then(results => {
+      .then((results) => {
         const mob = results;
         expect(mob.array instanceof Array).toBe(true);
         expect(typeof mob.object).toBe('object');
@@ -256,7 +256,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         expect(mob.date.iso).toBe('2016-05-26T20:55:01.154Z');
         return adapter._rawFind('MyClass', {});
       })
-      .then(results => {
+      .then((results) => {
         expect(results.length).toEqual(1);
         const mob = results[0];
         expect(mob.array instanceof Array).toBe(true);
@@ -264,7 +264,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         expect(mob.date instanceof Date).toBe(true);
         done();
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error);
         fail();
         done();
@@ -350,6 +350,37 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
     expect(postIndexPlan.executionStats.executionStages.stage).toBe('FETCH');
   });
 
+  it('should use index for caseInsensitive query on any table', async () => {
+    const testSchema = new Parse.Schema('Test');
+    testSchema.addString('uuid');
+    await testSchema.save();
+
+    const database = Config.get(Parse.applicationId).database;
+    const preIndexPlan = await database.find(
+      'Test',
+      { uuid: '12345' },
+      { caseInsensitive: true, explain: true }
+    );
+
+    const schema = await new Parse.Schema('Test').get();
+
+    await database.adapter.ensureIndex(
+      'Test',
+      schema,
+      ['uuid'],
+      'case_insensitive_uuid',
+      true
+    );
+
+    const postIndexPlan = await database.find(
+      'Test',
+      { uuid: '12345' },
+      { caseInsensitive: true, explain: true }
+    );
+    expect(preIndexPlan.executionStats.executionStages.stage).toBe('COLLSCAN');
+    expect(postIndexPlan.executionStats.executionStages.stage).toBe('FETCH');
+  });
+
   if (
     process.env.MONGODB_VERSION === '4.0.4' &&
     process.env.MONGODB_TOPOLOGY === 'replicaset' &&
@@ -404,7 +435,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         let found = false;
         databaseAdapter.database.serverConfig.command.calls
           .all()
-          .forEach(call => {
+          .forEach((call) => {
             found = true;
             expect(call.args[2].session.transaction.state).not.toBe(
               'NO_TRANSACTION'
@@ -443,7 +474,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         let found = false;
         databaseAdapter.database.serverConfig.command.calls
           .all()
-          .forEach(call => {
+          .forEach((call) => {
             found = true;
             expect(call.args[2].session).toBe(undefined);
           });
@@ -479,7 +510,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         let found = false;
         databaseAdapter.database.serverConfig.command.calls
           .all()
-          .forEach(call => {
+          .forEach((call) => {
             found = true;
             expect(call.args[2].session).toBe(undefined);
           });
@@ -507,7 +538,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
         let found = false;
         databaseAdapter.database.serverConfig.command.calls
           .all()
-          .forEach(call => {
+          .forEach((call) => {
             found = true;
             expect(call.args[2].session).toBe(undefined);
           });
@@ -527,7 +558,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
 
         const calls = databaseAdapter.database.serverConfig.insert.calls.all();
         expect(calls.length).toBeGreaterThan(0);
-        calls.forEach(call => {
+        calls.forEach((call) => {
           expect(call.args[2].session.transaction.state).toBe('NO_TRANSACTION');
         });
       });
@@ -548,7 +579,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
 
         const calls = databaseAdapter.database.serverConfig.update.calls.all();
         expect(calls.length).toBeGreaterThan(0);
-        calls.forEach(call => {
+        calls.forEach((call) => {
           expect(call.args[2].session.transaction.state).toBe('NO_TRANSACTION');
         });
       });
@@ -568,7 +599,7 @@ describe_only_db('mongo')('MongoStorageAdapter', () => {
 
         const calls = databaseAdapter.database.serverConfig.remove.calls.all();
         expect(calls.length).toBeGreaterThan(0);
-        calls.forEach(call => {
+        calls.forEach((call) => {
           expect(call.args[2].session.transaction.state).toBe('NO_TRANSACTION');
         });
       });
