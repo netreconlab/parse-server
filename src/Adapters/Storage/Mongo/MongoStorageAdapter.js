@@ -53,8 +53,12 @@ const storageAdapterAllCollections = (mongoAdapter) => {
 };
 
 const convertParseSchemaToMongoSchema = ({ ...schema }) => {
-  delete schema.fields._rperm;
-  delete schema.fields._wperm;
+  if (schema.fields._rperm != null) {
+    delete schema.fields._rperm;
+  }
+  if (schema.fields._wperm != null) {
+    delete schema.fields._wperm;
+  }
 
   if (schema.className === '_User') {
     // Legacy mongo adapter knows about the difference between password and _hashed_password.
