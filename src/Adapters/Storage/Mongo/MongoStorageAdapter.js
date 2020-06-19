@@ -53,10 +53,10 @@ const storageAdapterAllCollections = (mongoAdapter) => {
 };
 
 const convertParseSchemaToMongoSchema = ({ ...schema }) => {
-  if (schema.fields._rperm != null) {
+  if (typeof schema.fields._rperm !== 'undefined') {
     delete schema.fields._rperm;
   }
-  if (schema.fields._wperm != null) {
+  if (typeof schema.fields._wperm !== 'undefined') {
     delete schema.fields._wperm;
   }
 
