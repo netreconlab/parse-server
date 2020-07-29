@@ -6,7 +6,7 @@ const batchPath = '/batch';
 
 // Mounts a batch-handler onto a PromiseRouter.
 function mountOnto(router) {
-  router.route('POST', batchPath, (req) => {
+  router.route('POST', batchPath, req => {
     return handleBatch(router, req);
   });
 }
@@ -89,7 +89,7 @@ function handleBatch(router, req) {
   }
 
   return initialPromise.then(() => {
-    const promises = req.body.requests.map((restRequest) => {
+    const promises = req.body.requests.map(restRequest => {
       const routablePath = makeRoutablePath(restRequest.path);
 
       // Construct a request that we can send to a handler
@@ -100,26 +100,21 @@ function handleBatch(router, req) {
         info: req.info,
       };
 
-      // Add context to request body
-      if (req.body._context) {
-        request.body._context = req.body._context;
-      }
-
       return router
         .tryRouteRequest(restRequest.method, routablePath, request)
         .then(
-          (response) => {
+          response => {
             return { success: response.response };
           },
-          (error) => {
+          error => {
             return { error: { code: error.code, error: error.message } };
           }
         );
     });
 
-    return Promise.all(promises).then((results) => {
+    return Promise.all(promises).then(results => {
       if (req.body.transaction === true) {
-        if (results.find((result) => typeof result.error === 'object')) {
+        if (results.find(result => typeof result.error === 'object')) {
           return req.config.database.abortTransactionalSession().then(() => {
             return Promise.reject({ response: results });
           });
