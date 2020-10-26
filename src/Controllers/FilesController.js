@@ -31,14 +31,12 @@ export class FilesController extends AdaptableController {
     }
 
     const location = this.adapter.getFileLocation(config, filename);
-    return this.adapter
-      .createFile(filename, data, contentType, options)
-      .then(() => {
-        return Promise.resolve({
-          url: location,
-          name: filename,
-        });
+    return this.adapter.createFile(filename, data, contentType, options).then(() => {
+      return Promise.resolve({
+        url: location,
+        name: filename,
       });
+    });
   }
 
   deleteFile(config, filename) {
@@ -76,13 +74,19 @@ export class FilesController extends AdaptableController {
         // all filenames starting with a "-" seperated UUID should be from files.parse.com
         // all other filenames have been migrated or created from Parse Server
         if (filename.indexOf('tfss-') === 0) {
-          fileObject['url'] =
-            'http://files.parsetfss.com/' + encodeURIComponent(filename);
+          fileObject['url'] = 'http://files.parsetfss.com/' + encodeURIComponent(filename);
         } else if (legacyFilesRegex.test(filename)) {
-          fileObject['url'] =
-            'http://files.parse.com/' + encodeURIComponent(filename);
+          fileObject['url'] = 'http://files.parse.com/' + encodeURIComponent(filename);
         } else {
-          fileObject['url'] = this.adapter.getFileLocation(config, filename);
+          if (filename.indexOf('tfss-') === 0) {
+            fileObject['url'] =
+              'http://files.parsetfss.com/' + config.fileKey + '/' + encodeURIComponent(filename);
+          } else if (legacyFilesRegex.test(filename)) {
+            fileObject['url'] =
+              'http://files.parse.com/' + config.fileKey + '/' + encodeURIComponent(filename);
+          } else {
+            fileObject['url'] = this.adapter.getFileLocation(config, filename);
+          }
         }
       }
     }

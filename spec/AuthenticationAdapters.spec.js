@@ -1,7 +1,6 @@
 const request = require('../lib/request');
 const Config = require('../lib/Config');
-const defaultColumns = require('../lib/Controllers/SchemaController')
-  .defaultColumns;
+const defaultColumns = require('../lib/Controllers/SchemaController').defaultColumns;
 const authenticationLoader = require('../lib/Adapters/Auth');
 const path = require('path');
 const responses = {
@@ -49,10 +48,7 @@ describe('AuthenticationProviders', function () {
       jequal(typeof provider.validateAppId, 'function');
       const validateAuthDataPromise = provider.validateAuthData({}, {});
       const validateAppIdPromise = provider.validateAppId('app', 'key', {});
-      jequal(
-        validateAuthDataPromise.constructor,
-        Promise.prototype.constructor
-      );
+      jequal(validateAuthDataPromise.constructor, Promise.prototype.constructor);
       jequal(validateAppIdPromise.constructor, Promise.prototype.constructor);
       validateAuthDataPromise.then(
         () => {},
@@ -70,23 +66,20 @@ describe('AuthenticationProviders', function () {
       if (noResponse.includes(providerName)) {
         return;
       }
-      spyOn(require('../lib/Adapters/Auth/httpsRequest'), 'get').and.callFake(
-        options => {
-          if (
-            options ===
-            'https://oauth.vk.com/access_token?client_id=appId&client_secret=appSecret&v=5.59&grant_type=client_credentials'
-          ) {
-            return {
-              access_token: 'access_token',
-            };
-          }
-          return Promise.resolve(responses[providerName] || { id: 'userId' });
+      spyOn(require('../lib/Adapters/Auth/httpsRequest'), 'get').and.callFake(options => {
+        if (
+          options ===
+            'https://oauth.vk.com/access_token?client_id=appId&client_secret=appSecret&v=5.123&grant_type=client_credentials' ||
+          options ===
+            'https://oauth.vk.com/access_token?client_id=appId&client_secret=appSecret&v=5.124&grant_type=client_credentials'
+        ) {
+          return {
+            access_token: 'access_token',
+          };
         }
-      );
-      spyOn(
-        require('../lib/Adapters/Auth/httpsRequest'),
-        'request'
-      ).and.callFake(() => {
+        return Promise.resolve(responses[providerName] || { id: 'userId' });
+      });
+      spyOn(require('../lib/Adapters/Auth/httpsRequest'), 'request').and.callFake(() => {
         return Promise.resolve(responses[providerName] || { id: 'userId' });
       });
       const provider = require('../lib/Adapters/Auth/' + providerName);
@@ -96,6 +89,8 @@ describe('AuthenticationProviders', function () {
           appIds: 'appId',
           appSecret: 'appSecret',
         };
+        await provider.validateAuthData({ id: 'userId' }, params);
+        params.appVersion = '5.123';
       }
       await provider.validateAuthData({ id: 'userId' }, params);
     });
@@ -270,10 +265,7 @@ describe('AuthenticationProviders', function () {
     ok(model.extended(), 'Should have used the subclass.');
     strictEqual(provider.authData.id, provider.synchronizedUserId);
     strictEqual(provider.authData.access_token, provider.synchronizedAuthToken);
-    strictEqual(
-      provider.authData.expiration_date,
-      provider.synchronizedExpiration
-    );
+    strictEqual(provider.authData.expiration_date, provider.synchronizedExpiration);
     ok(model._isLinked('myoauth'), 'User should be linked to myoauth');
 
     await model._unlinkFrom('myoauth');
@@ -286,11 +278,7 @@ describe('AuthenticationProviders', function () {
     const res = await config.database.adapter.find(
       '_User',
       {
-        fields: Object.assign(
-          {},
-          defaultColumns._Default,
-          defaultColumns._Installation
-        ),
+        fields: Object.assign({}, defaultColumns._Default, defaultColumns._Installation),
       },
       { objectId: model.id },
       {}
@@ -313,12 +301,8 @@ describe('AuthenticationProviders', function () {
 
   function validateAuthenticationHandler(authenticationHandler) {
     expect(authenticationHandler).not.toBeUndefined();
-    expect(typeof authenticationHandler.getValidatorForProvider).toBe(
-      'function'
-    );
-    expect(typeof authenticationHandler.getValidatorForProvider).toBe(
-      'function'
-    );
+    expect(typeof authenticationHandler.getValidatorForProvider).toBe('function');
+    expect(typeof authenticationHandler.getValidatorForProvider).toBe('function');
   }
 
   function validateAuthenticationAdapter(authAdapter) {
@@ -340,10 +324,7 @@ describe('AuthenticationProviders', function () {
         return Promise.resolve();
       },
       validateAuthData: function (authData) {
-        if (
-          authData.id == validAuthData.id &&
-          authData.token == validAuthData.token
-        ) {
+        if (authData.id == validAuthData.id && authData.token == validAuthData.token) {
           return Promise.resolve();
         }
         return Promise.reject();
@@ -358,9 +339,7 @@ describe('AuthenticationProviders', function () {
     });
 
     validateAuthenticationHandler(authenticationHandler);
-    const validator = authenticationHandler.getValidatorForProvider(
-      'customAuthentication'
-    );
+    const validator = authenticationHandler.getValidatorForProvider('customAuthentication');
     validateValidator(validator);
 
     validator(validAuthData).then(
@@ -383,9 +362,7 @@ describe('AuthenticationProviders', function () {
     });
 
     validateAuthenticationHandler(authenticationHandler);
-    const validator = authenticationHandler.getValidatorForProvider(
-      'customAuthentication'
-    );
+    const validator = authenticationHandler.getValidatorForProvider('customAuthentication');
     validateValidator(validator);
 
     validator({
@@ -410,9 +387,7 @@ describe('AuthenticationProviders', function () {
     });
 
     validateAuthenticationHandler(authenticationHandler);
-    const validator = authenticationHandler.getValidatorForProvider(
-      'customAuthentication'
-    );
+    const validator = authenticationHandler.getValidatorForProvider('customAuthentication');
     validateValidator(validator);
 
     validator({
@@ -435,11 +410,10 @@ describe('AuthenticationProviders', function () {
         appSecret: 'secret',
       },
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('facebook', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'facebook',
+      options
+    );
     validateAuthenticationAdapter(adapter);
     expect(appIds).toEqual(['a', 'b']);
     expect(providerOptions).toEqual(options.facebook);
@@ -459,15 +433,12 @@ describe('AuthenticationProviders', function () {
     const authData = {
       access_token: 'badtoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('facebook', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'facebook',
+      options
+    );
     await adapter.validateAppId(appIds, authData, providerOptions);
-    expect(
-      httpsRequest.get.calls.first().args[0].includes('appsecret_proof')
-    ).toBe(true);
+    expect(httpsRequest.get.calls.first().args[0].includes('appsecret_proof')).toBe(true);
   });
 
   it('should handle Facebook appSecret for validating auth data', async () => {
@@ -485,14 +456,9 @@ describe('AuthenticationProviders', function () {
       id: 'test',
       access_token: 'test',
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'facebook',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('facebook', options);
     await adapter.validateAuthData(authData, providerOptions);
-    expect(
-      httpsRequest.get.calls.first().args[0].includes('appsecret_proof')
-    ).toBe(true);
+    expect(httpsRequest.get.calls.first().args[0].includes('appsecret_proof')).toBe(true);
   });
 
   it('properly loads a custom adapter with options', () => {
@@ -503,11 +469,10 @@ describe('AuthenticationProviders', function () {
         appIds: ['a', 'b'],
       },
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('custom', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'custom',
+      options
+    );
     validateAuthenticationAdapter(adapter);
     expect(appIds).toEqual(['a', 'b']);
     expect(providerOptions).toEqual(options.custom);
@@ -522,10 +487,7 @@ describe('instagram auth adapter', () => {
     spyOn(httpsRequest, 'get').and.callFake(() => {
       return Promise.resolve({ data: { id: 'userId' } });
     });
-    await instagram.validateAuthData(
-      { id: 'userId', access_token: 'the_token' },
-      {}
-    );
+    await instagram.validateAuthData({ id: 'userId', access_token: 'the_token' }, {});
     expect(httpsRequest.get).toHaveBeenCalledWith(
       'https://graph.instagram.com/me?fields=id&access_token=the_token'
     );
@@ -564,10 +526,7 @@ describe('google auth adapter', () => {
 
   it('should not decode invalid id_token', async () => {
     try {
-      await google.validateAuthData(
-        { id: 'the_user_id', id_token: 'the_token' },
-        {}
-      );
+      await google.validateAuthData({ id: 'the_user_id', id_token: 'the_token' }, {});
       fail();
     } catch (e) {
       expect(e.message).toBe('provided token does not decode as JWT');
@@ -697,9 +656,7 @@ describe('google play games service auth', () => {
         access_token: 'access_token',
       });
     } catch (e) {
-      expect(e.message).toBe(
-        'Google Play Games Services - authData is invalid for this user.'
-      );
+      expect(e.message).toBe('Google Play Games Services - authData is invalid for this user.');
     }
   });
 });
@@ -742,10 +699,7 @@ describe('keycloak auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     try {
       await adapter.validateAuthData(authData, providerOptions);
       fail();
@@ -772,10 +726,7 @@ describe('keycloak auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     try {
       await adapter.validateAuthData(authData, providerOptions);
       fail();
@@ -802,10 +753,7 @@ describe('keycloak auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     try {
       await adapter.validateAuthData(authData, providerOptions);
       fail();
@@ -830,10 +778,7 @@ describe('keycloak auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     try {
       await adapter.validateAuthData(authData, providerOptions);
       fail();
@@ -866,10 +811,7 @@ describe('keycloak auth adapter', () => {
       roles: ['role1'],
       groups: ['group1'],
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     try {
       await adapter.validateAuthData(authData, providerOptions);
       fail();
@@ -902,10 +844,7 @@ describe('keycloak auth adapter', () => {
       roles: ['role1'],
       groups: ['group1'],
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     try {
       await adapter.validateAuthData(authData, providerOptions);
       fail();
@@ -938,10 +877,7 @@ describe('keycloak auth adapter', () => {
       roles: ['role1'],
       groups: ['group1'],
     };
-    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter(
-      'keycloak',
-      options
-    );
+    const { adapter, providerOptions } = authenticationLoader.loadAuthAdapter('keycloak', options);
     await adapter.validateAuthData(authData, providerOptions);
     expect(httpsRequest.get).toHaveBeenCalledWith({
       host: 'http://example.com',
@@ -963,10 +899,7 @@ describe('oauth2 auth adapter', () => {
         oauth2: true,
       },
     };
-    const loadedAuthAdapter = authenticationLoader.loadAuthAdapter(
-      'oauth2Authentication',
-      options
-    );
+    const loadedAuthAdapter = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
     expect(loadedAuthAdapter.adapter).toEqual(oauth2);
   });
 
@@ -982,21 +915,14 @@ describe('oauth2 auth adapter', () => {
         debug: true,
       },
     };
-    const loadedAuthAdapter = authenticationLoader.loadAuthAdapter(
-      'oauth2Authentication',
-      options
-    );
+    const loadedAuthAdapter = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
     const appIds = loadedAuthAdapter.appIds;
     const providerOptions = loadedAuthAdapter.providerOptions;
-    expect(providerOptions.tokenIntrospectionEndpointUrl).toEqual(
-      'https://example.com/introspect'
-    );
+    expect(providerOptions.tokenIntrospectionEndpointUrl).toEqual('https://example.com/introspect');
     expect(providerOptions.useridField).toEqual('sub');
     expect(providerOptions.appidField).toEqual('appId');
     expect(appIds).toEqual(['a', 'b']);
-    expect(providerOptions.authorizationHeader).toEqual(
-      'Basic dXNlcm5hbWU6cGFzc3dvcmQ='
-    );
+    expect(providerOptions.authorizationHeader).toEqual('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     expect(providerOptions.debug).toEqual(true);
   });
 
@@ -1012,11 +938,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     try {
       await adapter.validateAppId(appIds, authData, providerOptions);
     } catch (e) {
@@ -1037,11 +962,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     try {
       await adapter.validateAppId(appIds, authData, providerOptions);
     } catch (e) {
@@ -1062,11 +986,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     try {
       await adapter.validateAppId(appIds, authData, providerOptions);
     } catch (e) {
@@ -1089,11 +1012,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     try {
       await adapter.validateAppId(appIds, authData, providerOptions);
     } catch (e) {
@@ -1116,11 +1038,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     spyOn(httpsRequest, 'request').and.callFake(() => {
       return Promise.resolve({});
     });
@@ -1144,11 +1065,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     spyOn(httpsRequest, 'request').and.callFake(() => {
       return Promise.resolve({ active: true });
     });
@@ -1174,11 +1094,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     spyOn(httpsRequest, 'request').and.callFake(() => {
       return Promise.resolve({
         active: true,
@@ -1206,11 +1125,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     spyOn(httpsRequest, 'request').and.callFake(() => {
       return Promise.resolve({
         active: true,
@@ -1238,11 +1156,10 @@ describe('oauth2 auth adapter', () => {
       id: 'fakeid',
       access_token: 'sometoken',
     };
-    const {
-      adapter,
-      appIds,
-      providerOptions,
-    } = authenticationLoader.loadAuthAdapter('oauth2Authentication', options);
+    const { adapter, appIds, providerOptions } = authenticationLoader.loadAuthAdapter(
+      'oauth2Authentication',
+      options
+    );
     spyOn(httpsRequest, 'request').and.callFake(() => {
       return Promise.resolve({
         active: true,
@@ -1471,9 +1388,7 @@ describe('apple signin auth adapter', () => {
       { clientId: 'secret' }
     );
     expect(result).toEqual(fakeClaim);
-    expect(jwt.verify.calls.first().args[2].algorithms).toEqual(
-      fakeDecodedToken.header.alg
-    );
+    expect(jwt.verify.calls.first().args[2].algorithms).toEqual(fakeDecodedToken.header.alg);
   });
 
   it('should not verify invalid id_token', async () => {
@@ -1781,9 +1696,7 @@ describe('Apple Game Center Auth adapter', () => {
       await gcenter.validateAuthData(authData);
       fail();
     } catch (e) {
-      expect(e.message).toBe(
-        'Apple Game Center - invalid publicKeyUrl: invalid.com'
-      );
+      expect(e.message).toBe('Apple Game Center - invalid publicKeyUrl: invalid.com');
     }
   });
 });
@@ -1798,9 +1711,7 @@ describe('phant auth adapter', () => {
     };
     const { adapter } = authenticationLoader.loadAuthAdapter('phantauth', {});
 
-    spyOn(httpsRequest, 'get').and.callFake(() =>
-      Promise.resolve({ sub: 'invalidID' })
-    );
+    spyOn(httpsRequest, 'get').and.callFake(() => Promise.resolve({ sub: 'invalidID' }));
     try {
       await adapter.validateAuthData(authData);
       fail();
@@ -1832,9 +1743,7 @@ describe('microsoft graph auth adapter', () => {
     };
     microsoft.validateAuthData(authData).then(done.fail, err => {
       expect(err.code).toBe(101);
-      expect(err.message).toBe(
-        'Microsoft Graph auth is invalid for this user.'
-      );
+      expect(err.message).toBe('Microsoft Graph auth is invalid for this user.');
       done();
     });
   });
