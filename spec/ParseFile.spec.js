@@ -500,7 +500,7 @@ describe('Parse.File testing', () => {
       .then(result => {
         const fileAgain = result.get('oldfile');
         expect(fileAgain.url()).toEqual(
-          'http://files.parse.com/d6e80979-a128-4c57-a167-302f874700dc-123.txt'
+          'http://files.parse.com/file/d6e80979-a128-4c57-a167-302f874700dc-123.txt'
         );
         done();
       })
