@@ -23,7 +23,7 @@
     "@graphql-tools/links": "^6.2.4",
     "@graphql-tools/stitch": "6.2.3",
     "@graphql-tools/utils": "6.2.3",
-    "@parse/fs-files-adapter": "netreconlab/parse-server-fs-adapter",
+    "@parse/fs-files-adapter": "1.1.0",
     "@parse/push-adapter": "3.3.0",
     "@parse/s3-files-adapter": "1.5.0",
     "@parse/simple-mailgun-adapter": "1.1.0",
