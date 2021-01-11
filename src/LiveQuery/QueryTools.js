@@ -218,7 +218,7 @@ function matchesKeyConstraints(object, key, constraints) {
     }
     switch (condition) {
       case '$eq':
-        if (object[key] == compareTo) {
+        if (!equalObjects(object[key], compareTo)) {
           return false;
         }
         break;
