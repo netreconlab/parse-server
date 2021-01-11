@@ -217,6 +217,11 @@ function matchesKeyConstraints(object, key, constraints) {
       compareTo = Parse._decode(key, compareTo);
     }
     switch (condition) {
+      case '$eq':
+        if (object[key] == compareTo) {
+          return false;
+        }
+        break;
       case '$lt':
         if (object[key] >= compareTo) {
           return false;
