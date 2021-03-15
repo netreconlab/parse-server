@@ -6,6 +6,7 @@ import { CacheAdapter } from '../Adapters/Cache/CacheAdapter';
 import { MailAdapter } from '../Adapters/Email/MailAdapter';
 import { PubSubAdapter } from '../Adapters/PubSub/PubSubAdapter';
 import { WSSAdapter } from '../Adapters/WebSocketServer/WSSAdapter';
+import { CheckGroup } from '../Security/CheckGroup';
 
 // @flow
 type Adapter<T> = string | any | T;
@@ -83,6 +84,17 @@ export interface ParseServerOptions {
   /* Key for REST calls
   :ENV: PARSE_SERVER_REST_API_KEY */
   restAPIKey: ?string;
+  /* Enable (or disable) the addition of OAuth 2.0
+  :ENV: PARSE_SERVER_OAUTH_20
+  :DEFAULT: false */
+  oauth20: ?boolean;
+  /* Key for OAuth 2.0
+  :ENV: PARSE_SERVER_OAUTH_KEY */
+  oauthKey: ?string;
+  /* The TTL for Access Token
+  :ENV: PARSE_SERVER_OAUTH_TTL
+  :DEFAULT: 1800 - 30 minutes */
+  oauthTTL: ?number;
   /* Read-only key, which has the same capabilities as MasterKey without writes */
   readOnlyMasterKey: ?string;
   /* Key sent with outgoing webhook calls */
@@ -227,6 +239,20 @@ export interface ParseServerOptions {
   serverStartComplete: ?(error: ?Error) => void;
   /* Callback when server has closed */
   serverCloseComplete: ?() => void;
+  /* The security options to identify and report weak security settings.
+  :DEFAULT: {} */
+  security: ?SecurityOptions;
+}
+
+export interface SecurityOptions {
+  /* Is true if Parse Server should check for weak security settings.
+  :DEFAULT: false */
+  enableCheck: ?boolean;
+  /* Is true if the security check report should be written to logs. This should only be enabled temporarily to not expose weak security settings in logs.
+  :DEFAULT: false */
+  enableCheckLog: ?boolean;
+  /* The security check groups to run. This allows to add custom security checks or override existing ones. Default are the groups defined in `CheckGroups.js`. */
+  checkGroups: ?(CheckGroup[]);
 }
 
 export interface PagesOptions {
@@ -256,6 +282,18 @@ export interface PagesOptions {
   /* The URLs to the custom pages.
   :DEFAULT: {} */
   customUrls: ?PagesCustomUrlsOptions;
+  /* The custom routes.
+  :DEFAULT: [] */
+  customRoutes: ?(PagesRoute[]);
+}
+
+export interface PagesRoute {
+  /* The route path. */
+  path: string;
+  /* The route method, e.g. 'GET' or 'POST'. */
+  method: string;
+  /* The route handler that is an async function. */
+  handler: () => void;
 }
 
 export interface PagesCustomUrlsOptions {
