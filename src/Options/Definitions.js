@@ -353,6 +353,22 @@ module.exports.ParseServerOptions = {
     env: 'PARSE_SERVER_REST_API_KEY',
     help: 'Key for REST calls',
   },
+  oauth20: {
+    env: 'PARSE_SERVER_OAUTH_20',
+    help: 'Sets whether to use the OAuth protocol',
+    action: parsers.booleanParser,
+    default: false,
+  },
+  oauthKey: {
+    env: 'PARSE_SERVER_OAUTH_KEY',
+    help: 'Key for OAuth protocol',
+  },
+  oauthTTL: {
+    env: 'PARSE_SERVER_OAUTH_TTL',
+    help: 'The JSON Web Token (JWT) expiration TTL',
+    action: parsers.numberParser('oauthTTL'),
+    default: 1800,
+  },
   revokeSessionOnPasswordReset: {
     env: 'PARSE_SERVER_REVOKE_SESSION_ON_PASSWORD_RESET',
     help:
@@ -372,6 +388,12 @@ module.exports.ParseServerOptions = {
       'The TTL for caching the schema for optimizing read/write operations. You should put a long TTL when your DB is in production. default to 5000; set 0 to disable.',
     action: parsers.numberParser('schemaCacheTTL'),
     default: 5000,
+  },
+  security: {
+    env: 'PARSE_SERVER_SECURITY',
+    help: 'The security options to identify and report weak security settings.',
+    action: parsers.objectParser,
+    default: {},
   },
   serverCloseComplete: {
     env: 'PARSE_SERVER_SERVER_CLOSE_COMPLETE',
@@ -424,7 +446,34 @@ module.exports.ParseServerOptions = {
     help: 'Key sent with outgoing webhook calls',
   },
 };
+module.exports.SecurityOptions = {
+  checkGroups: {
+    env: 'PARSE_SERVER_SECURITY_CHECK_GROUPS',
+    help:
+      'The security check groups to run. This allows to add custom security checks or override existing ones. Default are the groups defined in `CheckGroups.js`.',
+    action: parsers.arrayParser,
+  },
+  enableCheck: {
+    env: 'PARSE_SERVER_SECURITY_ENABLE_CHECK',
+    help: 'Is true if Parse Server should check for weak security settings.',
+    action: parsers.booleanParser,
+    default: false,
+  },
+  enableCheckLog: {
+    env: 'PARSE_SERVER_SECURITY_ENABLE_CHECK_LOG',
+    help:
+      'Is true if the security check report should be written to logs. This should only be enabled temporarily to not expose weak security settings in logs.',
+    action: parsers.booleanParser,
+    default: false,
+  },
+};
 module.exports.PagesOptions = {
+  customRoutes: {
+    env: 'PARSE_SERVER_PAGES_CUSTOM_ROUTES',
+    help: 'The custom routes.',
+    action: parsers.arrayParser,
+    default: [],
+  },
   customUrls: {
     env: 'PARSE_SERVER_PAGES_CUSTOM_URLS',
     help: 'The URLs to the custom pages.',
@@ -479,6 +528,23 @@ module.exports.PagesOptions = {
       'The placeholder keys and values which will be filled in pages; this can be a simple object or a callback function.',
     action: parsers.objectParser,
     default: {},
+  },
+};
+module.exports.PagesRoute = {
+  handler: {
+    env: 'PARSE_SERVER_PAGES_ROUTE_HANDLER',
+    help: 'The route handler that is an async function.',
+    required: true,
+  },
+  method: {
+    env: 'PARSE_SERVER_PAGES_ROUTE_METHOD',
+    help: "The route method, e.g. 'GET' or 'POST'.",
+    required: true,
+  },
+  path: {
+    env: 'PARSE_SERVER_PAGES_ROUTE_PATH',
+    help: 'The route path.',
+    required: true,
   },
 };
 module.exports.PagesCustomUrlsOptions = {
