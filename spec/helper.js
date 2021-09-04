@@ -2,6 +2,7 @@
 const semver = require('semver');
 const CurrentSpecReporter = require('./support/CurrentSpecReporter.js');
 const { SpecReporter } = require('jasmine-spec-reporter');
+const SchemaCache = require('../lib/Adapters/Cache/SchemaCache').default;
 
 // Sets up a Parse API server for testing.
 jasmine.DEFAULT_TIMEOUT_INTERVAL = process.env.PARSE_SERVER_TEST_TIMEOUT || 10000;
@@ -37,6 +38,7 @@ const PostgresStorageAdapter = require('../lib/Adapters/Storage/Postgres/Postgre
   .default;
 const MongoStorageAdapter = require('../lib/Adapters/Storage/Mongo/MongoStorageAdapter').default;
 const RedisCacheAdapter = require('../lib/Adapters/Cache/RedisCacheAdapter').default;
+const RESTController = require('parse/lib/node/RESTController');
 const { VolatileClassesSchemas } = require('../lib/Controllers/SchemaController');
 
 const mongoURI = 'mongodb://localhost:27017/parseServerMongoAdapterTestDatabase';
@@ -94,6 +96,7 @@ const defaultConfiguration = {
   masterKey: 'test',
   readOnlyMasterKey: 'read-only-test',
   fileKey: 'test',
+  directAccess: false,
   silent,
   logLevel,
   fileUpload: {
@@ -155,6 +158,7 @@ const reconfigureServer = (changedConfiguration = {}) => {
           if (error) {
             reject(error);
           } else {
+            Parse.CoreManager.setRESTController(RESTController);
             resolve(parseServer);
           }
         },
@@ -206,6 +210,7 @@ afterEach(function (done) {
     }
     destroyAliveConnections();
     await TestUtils.destroyAllDataPermanently(true);
+    SchemaCache.clear();
     if (didChangeConfiguration) {
       await reconfigureServer();
     } else {
@@ -510,3 +515,5 @@ jasmine.restoreLibrary = function (library, name) {
   }
   require(library)[name] = libraryCache[library][name];
 };
+
+jasmine.timeout = t => new Promise(resolve => setTimeout(resolve, t));
