@@ -970,7 +970,7 @@ class DatabaseController {
       ).then(() => {
         return Promise.resolve(query);
       });
-    }
+    } /*
     if (query['$and']) {
       const ors = query['$and'];
       return Promise.all(
@@ -982,7 +982,7 @@ class DatabaseController {
       ).then(() => {
         return Promise.resolve(query);
       });
-    }
+    }*/
 
     const promises = Object.keys(query).map(key => {
       const t = schema.getExpectedType(className, key);
@@ -1061,13 +1061,13 @@ class DatabaseController {
         })
       );
     }
-    if (query['$and']) {
+    /*if (query['$and']) {
       return Promise.all(
         query['$and'].map(aQuery => {
           return this.reduceRelationKeys(className, aQuery, queryOptions);
         })
       );
-    }
+    }*/
     var relatedTo = query['$relatedTo'];
     if (relatedTo) {
       return this.relatedIds(
