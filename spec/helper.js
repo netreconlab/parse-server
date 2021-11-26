@@ -86,6 +86,7 @@ if (process.env.PARSE_SERVER_LOG_LEVEL) {
 const defaultConfiguration = {
   filesAdapter,
   serverURL: 'http://localhost:' + port + '/1',
+  publicServerURL: 'http://localhost:' + port + '/1',
   databaseAdapter,
   appId: 'test',
   javascriptKey: 'test',
@@ -96,6 +97,7 @@ const defaultConfiguration = {
   masterKey: 'test',
   readOnlyMasterKey: 'read-only-test',
   fileKey: 'test',
+  allowClientClassCreation: true,
   directAccess: false,
   silent,
   logLevel,

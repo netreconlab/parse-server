@@ -2156,6 +2156,10 @@ describe('beforeFind hooks', () => {
 });
 
 describe('afterFind hooks', () => {
+  beforeEach(async function () {
+    await reconfigureServer();
+  });
+
   it('should add afterFind trigger', done => {
     Parse.Cloud.afterFind('MyObject', req => {
       const q = req.query;
@@ -2431,6 +2435,50 @@ describe('afterFind hooks', () => {
     expect(obj2).toBeDefined();
     expect(obj2.toJSON()).toEqual({});
     expect(obj2.id).toBeUndefined();
+  });
+
+  it('can create new object in afterFind when directAccess=true and locked schema', async () => {
+    await Parse.User.signUp('tupac', 'shakur');
+    const obj = new Parse.Object('MyObject');
+    obj.set('xyz', 'yolo');
+    await obj.save();
+    const schema = new Parse.Schema('Test');
+    await schema
+      .setCLP({
+        get: { requiresAuthentication: true },
+        find: { requiresAuthentication: true },
+        create: { requiresAuthentication: true },
+        update: { requiresAuthentication: true },
+        delete: { requiresAuthentication: true },
+        addField: {},
+        protectedFields: {},
+      })
+      .save();
+    await reconfigureServer({
+      allowClientClassCreation: false,
+      enableSchemaHooks: true,
+      directAccess: true,
+    });
+    Parse.Cloud.afterFind('MyObject', async ({ user, objects }) => {
+      const otherObject = new Parse.Object('Test');
+      otherObject.set('foo', 'bar');
+      otherObject.set('user', user);
+      for (const property in objects[0].attributes) {
+        if (Object.prototype.hasOwnProperty.call(objects[0].attributes, property)) {
+          otherObject.set(property, objects[0].attributes[property]);
+        }
+      }
+      await otherObject.save(null, { useMasterKey: true });
+      const query = new Parse.Query('Test');
+      query.equalTo('foo', 'bar');
+      const obj = await query.find();
+      expect(obj[0].get('user').id).toEqual(user.id);
+      expect(obj[0].get('xyz')).toEqual('yolo');
+    });
+    const query = new Parse.Query('MyObject');
+    query.equalTo('objectId', obj.id);
+    const obj2 = await query.first();
+    expect(obj2.get('xyz')).toBe('yolo');
   });
 
   it('can return a unsaved object in afterFind', async () => {
