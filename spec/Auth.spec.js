@@ -1,13 +1,7 @@
 'use strict';
 
 describe('Auth', () => {
-  const {
-    Auth,
-    getAuthForSessionToken,
-    createJWT,
-    validJWT,
-    decodeJWT,
-  } = require('../lib/Auth.js');
+  const { Auth, getAuthForSessionToken } = require('../lib/Auth.js');
   const Config = require('../lib/Config');
   describe('getUserRoles', () => {
     let auth;
@@ -216,33 +210,6 @@ describe('Auth', () => {
       const cloudRoles2 = await user2Auth.getRolesForUser();
       expect(cloudRoles.length).toBe(rolesNumber);
       expect(cloudRoles2.length).toBe(rolesNumber);
-    });
-  });
-
-  describe('OAuth2.0 JWT', () => {
-    it('should handle jwt', async () => {
-      const oauthKey = 'jwt-secret';
-      const oauthTTL = 100;
-      const user = new Parse.User();
-      await user.signUp({
-        username: 'jwt-test',
-        password: 'jwt-password',
-      });
-      const sessionToken = user.getSessionToken();
-
-      const jwt = createJWT(sessionToken, oauthKey, oauthTTL);
-      expect(jwt.accessToken).toBeDefined();
-      expect(jwt.expires_in).toBeDefined();
-
-      const isValid = validJWT('invalid', oauthKey);
-      expect(isValid).toBe(false);
-
-      const result = validJWT(jwt.accessToken, oauthKey);
-      expect(result.sub).toBe(sessionToken);
-      expect(result.exp).toBeDefined();
-
-      const decoded = decodeJWT(jwt.accessToken);
-      expect(result).toEqual(decoded);
     });
   });
 });

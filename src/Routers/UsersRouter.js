@@ -7,9 +7,15 @@ import ClassesRouter from './ClassesRouter';
 import rest from '../rest';
 import Auth from '../Auth';
 import passwordCrypto from '../password';
-import { maybeRunTrigger, Types as TriggerTypes } from '../triggers';
+import {
+  maybeRunTrigger,
+  Types as TriggerTypes,
+  getRequestObject,
+  resolveError,
+} from '../triggers';
 import { promiseEnsureIdempotency } from '../middlewares';
 import RestWrite from '../RestWrite';
+import { logger } from '../logger';
 
 export class UsersRouter extends ClassesRouter {
   className() {
@@ -149,115 +155,11 @@ export class UsersRouter extends ClassesRouter {
     });
   }
 
-  async handleCreate(req) {
-    const res = await rest.create(
-      req.config,
-      req.auth,
-      this.className(req),
-      req.body,
-      req.info.clientSDK,
-      req.info.context
-    );
-    if (req.config.oauth20 === true) {
-      const sessionToken = res.response.sessionToken;
-      const result = await rest.find(
-        req.config,
-        Auth.master(req.config),
-        '_Session',
-        { sessionToken },
-        { include: 'user' },
-        req.info.clientSDK,
-        req.info.context
-      );
-      const user = result.results[0];
-      const token = Auth.createJWT(sessionToken, req.config.oauthKey, req.config.oauthTTL);
-      res.response.accessToken = token.accessToken;
-      res.response.refreshToken = user.refreshToken;
-      res.response.expiresAt = token.expires_in;
-      delete res.response.sessionToken;
-    }
-    return res;
-  }
-
-  async handleRefresh(req) {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid refresh token');
-    }
-    const res = await rest.find(
-      req.config,
-      Auth.master(req.config),
-      '_Session',
-      { refreshToken },
-      { include: 'user' },
-      req.info.clientSDK,
-      req.info.context
-    );
-    if (!res.results || res.results.length == 0 || !res.results[0].user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid refresh token');
-    } else {
-      const data = res.results[0];
-      const newCode = Auth.generateRefreshToken();
-      const sessionId = data.objectId;
-      const token = Auth.createJWT(data.sessionToken, req.config.oauthKey, req.config.oauthTTL);
-      await req.config.database.update(
-        '_Session',
-        { objectId: sessionId },
-        { refreshToken: newCode }
-      );
-      return {
-        response: {
-          accessToken: token.accessToken,
-          refreshToken: newCode,
-          expiresAt: token.expires_in,
-        },
-      };
-    }
-  }
-
-  async handleRevoke(req) {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid refresh token');
-    }
-    const res = await rest.find(
-      req.config,
-      Auth.master(req.config),
-      '_Session',
-      { refreshToken: refreshToken },
-      undefined,
-      req.info.clientSDK,
-      req.info.context
-    );
-    if (res.results && res.results.length) {
-      await rest.del(
-        req.config,
-        Auth.master(req.config),
-        '_Session',
-        res.results[0].objectId,
-        req.info.context
-      );
-      this._runAfterLogoutTrigger(req, res.results[0]);
-    }
-    return { response: {} };
-  }
-
   handleMe(req) {
     if (!req.info || !req.info.sessionToken) {
       throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token');
     }
-    let sessionToken = req.info.sessionToken;
-    const originalToken = req.info.sessionToken;
-
-    // Check if you use OAuth to retrieve the sessionToken from within the JWT
-    if (req.config.oauth20 === true) {
-      if (Auth.validJWT(sessionToken, req.config.oauthKey) === false) {
-        throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token');
-      }
-      const decoded = Auth.decodeJWT(sessionToken);
-      sessionToken = decoded.sub;
-    }
-
+    const sessionToken = req.info.sessionToken;
     return rest
       .find(
         req.config,
@@ -273,18 +175,11 @@ export class UsersRouter extends ClassesRouter {
           throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token');
         } else {
           const user = response.results[0].user;
-          if (req.config.oauth20 === true) {
-            const decoded = Auth.decodeJWT(originalToken);
-            const expiresDate = new Date(decoded.exp * 1000);
-            user.accessToken = originalToken;
-            user.expiresAt = { __type: 'Date', iso: expiresDate.toISOString() };
-          } else {
-            user.sessionToken = sessionToken;
-          }
+          // Send token back on the login, because SDKs expect that.
+          user.sessionToken = sessionToken;
 
           // Remove hidden properties.
           UsersRouter.removeHiddenProperties(user);
-
           return { response: user };
         }
       });
@@ -292,6 +187,30 @@ export class UsersRouter extends ClassesRouter {
 
   async handleLogIn(req) {
     const user = await this._authenticateUserFromRequest(req);
+    const authData = req.body && req.body.authData;
+    // Check if user has provided their required auth providers
+    Auth.checkIfUserHasProvidedConfiguredProvidersForLogin(authData, user.authData, req.config);
+
+    let authDataResponse;
+    let validatedAuthData;
+    if (authData) {
+      const res = await Auth.handleAuthDataValidation(
+        authData,
+        new RestWrite(
+          req.config,
+          req.auth,
+          '_User',
+          { objectId: user.objectId },
+          req.body,
+          user,
+          req.info.clientSDK,
+          req.info.context
+        ),
+        user
+      );
+      authDataResponse = res.authDataResponse;
+      validatedAuthData = res.authData;
+    }
 
     // handle password expiry policy
     if (req.config.passwordPolicy && req.config.passwordPolicy.maxPasswordAge) {
@@ -338,6 +257,16 @@ export class UsersRouter extends ClassesRouter {
       req.config
     );
 
+    // If we have some new validated authData update directly
+    if (validatedAuthData && Object.keys(validatedAuthData).length) {
+      await req.config.database.update(
+        '_User',
+        { objectId: user.objectId },
+        { authData: validatedAuthData },
+        {}
+      );
+    }
+
     const { sessionData, createSession } = RestWrite.createSession(req.config, {
       userId: user.objectId,
       createdWith: {
@@ -347,33 +276,22 @@ export class UsersRouter extends ClassesRouter {
       installationId: req.info.installationId,
     });
 
-    // Check if you use OAuth to generate a JWT to return
-    if (req.config.oauth20 === true) {
-      var signedToken = Auth.createJWT(
-        sessionData.sessionToken,
-        req.config.oauthKey,
-        req.config.oauthTTL
-      );
-
-      user.accessToken = signedToken.accessToken;
-      user.refreshToken = sessionData.refreshToken;
-      user.expiresAt = signedToken.expires_in;
-
-      delete user.sessionToken;
-    } else {
-      user.sessionToken = sessionData.sessionToken;
-    }
+    user.sessionToken = sessionData.sessionToken;
 
     await createSession();
 
     const afterLoginUser = Parse.User.fromJSON(Object.assign({ className: '_User' }, user));
-    maybeRunTrigger(
+    await maybeRunTrigger(
       TriggerTypes.afterLogin,
       { ...req.auth, user: afterLoginUser },
       afterLoginUser,
       null,
       req.config
     );
+
+    if (authDataResponse) {
+      user.authDataResponse = authDataResponse;
+    }
 
     return { response: user };
   }
@@ -442,55 +360,36 @@ export class UsersRouter extends ClassesRouter {
       });
   }
 
-  handleLogOut(req) {
+  async handleLogOut(req) {
     const success = { response: {} };
     if (req.info && req.info.sessionToken) {
-      // Check if you use OAuth to retrieve the sessionToken from within the JWT
-      if (req.config.oauth20 === true) {
-        const decoded = Auth.decodeJWT(req.info.sessionToken);
-        req.info.sessionToken = decoded.sub;
-      }
-
-      return rest
-        .find(
+      const records = await rest.find(
+        req.config,
+        Auth.master(req.config),
+        '_Session',
+        { sessionToken: req.info.sessionToken },
+        undefined,
+        req.info.clientSDK,
+        req.info.context
+      );
+      if (records.results && records.results.length) {
+        await rest.del(
           req.config,
           Auth.master(req.config),
           '_Session',
-          { sessionToken: req.info.sessionToken },
-          undefined,
-          req.info.clientSDK,
+          records.results[0].objectId,
           req.info.context
-        )
-        .then(records => {
-          if (records.results && records.results.length) {
-            return rest
-              .del(
-                req.config,
-                Auth.master(req.config),
-                '_Session',
-                records.results[0].objectId,
-                req.info.context
-              )
-              .then(() => {
-                this._runAfterLogoutTrigger(req, records.results[0]);
-                return Promise.resolve(success);
-              });
-          }
-          return Promise.resolve(success);
-        });
+        );
+        await maybeRunTrigger(
+          TriggerTypes.afterLogout,
+          req.auth,
+          Parse.Session.fromJSON(Object.assign({ className: '_Session' }, records.results[0])),
+          null,
+          req.config
+        );
+      }
     }
-    return Promise.resolve(success);
-  }
-
-  _runAfterLogoutTrigger(req, session) {
-    // After logout trigger
-    maybeRunTrigger(
-      TriggerTypes.afterLogout,
-      req.auth,
-      Parse.Session.fromJSON(Object.assign({ className: '_Session' }, session)),
-      null,
-      req.config
-    );
+    return success;
   }
 
   _throwOnBadEmailConfig(req) {
@@ -584,6 +483,127 @@ export class UsersRouter extends ClassesRouter {
     });
   }
 
+  async handleChallenge(req) {
+    const { username, email, password, authData, challengeData } = req.body;
+
+    // if username or email provided with password try to authenticate the user by username
+    let user;
+    if (username || email) {
+      if (!password) {
+        throw new Parse.Error(
+          Parse.Error.OTHER_CAUSE,
+          'You provided username or email, you need to also provide password.'
+        );
+      }
+      user = await this._authenticateUserFromRequest(req);
+    }
+
+    if (!challengeData) {
+      throw new Parse.Error(Parse.Error.OTHER_CAUSE, 'Nothing to challenge.');
+    }
+
+    if (typeof challengeData !== 'object') {
+      throw new Parse.Error(Parse.Error.OTHER_CAUSE, 'challengeData should be an object.');
+    }
+
+    let request;
+    let parseUser;
+
+    // Try to find user by authData
+    if (authData) {
+      if (typeof authData !== 'object') {
+        throw new Parse.Error(Parse.Error.OTHER_CAUSE, 'authData should be an object.');
+      }
+      if (user) {
+        throw new Parse.Error(
+          Parse.Error.OTHER_CAUSE,
+          'You cannot provide username/email and authData, only use one identification method.'
+        );
+      }
+
+      if (Object.keys(authData).filter(key => authData[key].id).length > 1) {
+        throw new Parse.Error(
+          Parse.Error.OTHER_CAUSE,
+          'You cannot provide more than one authData provider with an id.'
+        );
+      }
+
+      const results = await Auth.findUsersWithAuthData(req.config, authData);
+
+      try {
+        if (!results[0] || results.length > 1) {
+          throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found.');
+        }
+        // Find the provider used to find the user
+        const provider = Object.keys(authData).find(key => authData[key].id);
+
+        parseUser = Parse.User.fromJSON({ className: '_User', ...results[0] });
+        request = getRequestObject(undefined, req.auth, parseUser, parseUser, req.config);
+        request.isChallenge = true;
+        // Validate authData used to identify the user to avoid brute-force attack on `id`
+        const { validator } = req.config.authDataManager.getValidatorForProvider(provider);
+        const validatorResponse = await validator(authData[provider], req, parseUser, request);
+        if (validatorResponse && validatorResponse.validator) {
+          await validatorResponse.validator();
+        }
+      } catch (e) {
+        // Rewrite the error to avoid guess id attack
+        logger.error(e);
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found.');
+      }
+    }
+
+    if (!parseUser) {
+      parseUser = user ? Parse.User.fromJSON({ className: '_User', ...user }) : undefined;
+    }
+
+    if (!request) {
+      request = getRequestObject(undefined, req.auth, parseUser, parseUser, req.config);
+      request.isChallenge = true;
+    }
+    const acc = {};
+    // Execute challenge step-by-step with consistent order for better error feedback
+    // and to avoid to trigger others challenges if one of them fails
+    for (const provider of Object.keys(challengeData).sort()) {
+      try {
+        const authAdapter = req.config.authDataManager.getValidatorForProvider(provider);
+        if (!authAdapter) {
+          continue;
+        }
+        const {
+          adapter: { challenge },
+        } = authAdapter;
+        if (typeof challenge === 'function') {
+          const providerChallengeResponse = await challenge(
+            challengeData[provider],
+            authData && authData[provider],
+            req.config.auth[provider],
+            request
+          );
+          acc[provider] = providerChallengeResponse || true;
+        }
+      } catch (err) {
+        const e = resolveError(err, {
+          code: Parse.Error.SCRIPT_FAILED,
+          message: 'Challenge failed. Unknown error.',
+        });
+        const userString = req.auth && req.auth.user ? req.auth.user.id : undefined;
+        logger.error(
+          `Failed running auth step challenge for ${provider} for user ${userString} with Error: ` +
+            JSON.stringify(e),
+          {
+            authenticationStep: 'challenge',
+            error: e,
+            user: userString,
+            provider,
+          }
+        );
+        throw e;
+      }
+    }
+    return { response: { challengeData: acc } };
+  }
+
   mountRoutes() {
     this.route('GET', '/users', req => {
       return this.handleFind(req);
@@ -593,12 +613,6 @@ export class UsersRouter extends ClassesRouter {
     });
     this.route('GET', '/users/me', req => {
       return this.handleMe(req);
-    });
-    this.route('POST', '/users/refresh', req => {
-      return this.handleRefresh(req);
-    });
-    this.route('POST', '/users/revoke', req => {
-      return this.handleRevoke(req);
     });
     this.route('GET', '/users/:objectId', req => {
       return this.handleGet(req);
@@ -629,6 +643,9 @@ export class UsersRouter extends ClassesRouter {
     });
     this.route('GET', '/verifyPassword', req => {
       return this.handleVerifyPassword(req);
+    });
+    this.route('POST', '/challenge', req => {
+      return this.handleChallenge(req);
     });
   }
 }
