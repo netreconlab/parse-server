@@ -19,9 +19,7 @@ RUN npm ci --omit=dev --ignore-scripts \
     # Install all dependencies
  && npm ci \
     # Run build steps
- && npm run build \
-    # Clean npm cache
- && npm cache clean --force
+ && npm run build
 
 ############################################################
 # Release stage
