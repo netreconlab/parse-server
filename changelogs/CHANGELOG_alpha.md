@@ -1,3 +1,306 @@
+# [6.4.0-alpha.3](https://github.com/parse-community/parse-server/compare/6.4.0-alpha.2...6.4.0-alpha.3) (2023-09-23)
+
+
+### Bug Fixes
+
+* Parse Server option `fileUpload.fileExtensions` fails to determine file extension if filename contains multiple dots ([#8754](https://github.com/parse-community/parse-server/issues/8754)) ([3d6d50e](https://github.com/parse-community/parse-server/commit/3d6d50e0afff18b95fb906914e2cebd3839b517a))
+
+# [6.4.0-alpha.2](https://github.com/parse-community/parse-server/compare/6.4.0-alpha.1...6.4.0-alpha.2) (2023-09-22)
+
+
+### Bug Fixes
+
+* Security upgrade graphql from 16.6.0 to 16.8.1 ([#8758](https://github.com/parse-community/parse-server/issues/8758)) ([71dfd8a](https://github.com/parse-community/parse-server/commit/71dfd8a7ece8c0dd1a66d03bb9420cfd39f4f9b1))
+
+# [6.4.0-alpha.1](https://github.com/parse-community/parse-server/compare/6.3.0...6.4.0-alpha.1) (2023-09-20)
+
+### Features
+
+* Add context to Cloud Code Triggers `beforeLogin` and `afterLogin` ([#8724](https://github.com/parse-community/parse-server/issues/8724)) ([a9c34ef](https://github.com/parse-community/parse-server/commit/a9c34ef1e2c78a42fb8b5fa8d569b7677c74919d))
+
+# [6.3.0-alpha.9](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.8...6.3.0-alpha.9) (2023-09-13)
+
+
+### Performance Improvements
+
+* Improve performance of recursive pointer iterations ([#8741](https://github.com/parse-community/parse-server/issues/8741)) ([45a3ed0](https://github.com/parse-community/parse-server/commit/45a3ed0fcf2c0170607505a1550fb15896e705fd))
+
+# [6.3.0-alpha.8](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.7...6.3.0-alpha.8) (2023-08-30)
+
+
+### Bug Fixes
+
+* Redis 4 does not reconnect after unhandled error ([#8706](https://github.com/parse-community/parse-server/issues/8706)) ([2b3d4e5](https://github.com/parse-community/parse-server/commit/2b3d4e5d3c85cd142f85af68dec51a8523548d49))
+
+# [6.3.0-alpha.7](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.6...6.3.0-alpha.7) (2023-08-18)
+
+
+### Bug Fixes
+
+* Remove config logging when launching Parse Server via CLI ([#8710](https://github.com/parse-community/parse-server/issues/8710)) ([ae68f0c](https://github.com/parse-community/parse-server/commit/ae68f0c31b741eeb83379c905c7ddfaa124436ec))
+
+# [6.3.0-alpha.6](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.5...6.3.0-alpha.6) (2023-07-17)
+
+
+### Bug Fixes
+
+* Parse Server option `fileUpload.fileExtensions` does not work with an array of extensions ([#8688](https://github.com/parse-community/parse-server/issues/8688)) ([6a4a00c](https://github.com/parse-community/parse-server/commit/6a4a00ca7af1163ea74b047b85cd6817366b824b))
+
+# [6.3.0-alpha.5](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.4...6.3.0-alpha.5) (2023-07-05)
+
+
+### Features
+
+* Add property `Parse.Server.version` to determine current version of Parse Server in Cloud Code ([#8670](https://github.com/parse-community/parse-server/issues/8670)) ([a9d376b](https://github.com/parse-community/parse-server/commit/a9d376b61f5b07806eafbda91c4e36c322f09298))
+
+# [6.3.0-alpha.4](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.3...6.3.0-alpha.4) (2023-07-04)
+
+
+### Bug Fixes
+
+* Server does not start via CLI when `auth` option is set ([#8666](https://github.com/parse-community/parse-server/issues/8666)) ([4e2000b](https://github.com/parse-community/parse-server/commit/4e2000bc563324389584ace3c090a5c1a7796a64))
+
+# [6.3.0-alpha.3](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.2...6.3.0-alpha.3) (2023-06-23)
+
+
+### Features
+
+* Add TOTP authentication adapter ([#8457](https://github.com/parse-community/parse-server/issues/8457)) ([cc079a4](https://github.com/parse-community/parse-server/commit/cc079a40f6849a0e9bc6fdc811e8649ecb67b589))
+
+# [6.3.0-alpha.2](https://github.com/parse-community/parse-server/compare/6.3.0-alpha.1...6.3.0-alpha.2) (2023-06-20)
+
+
+### Features
+
+* Add conditional email verification via dynamic Parse Server options `verifyUserEmails`, `sendUserEmailVerification` that now accept functions ([#8425](https://github.com/parse-community/parse-server/issues/8425)) ([44acd6d](https://github.com/parse-community/parse-server/commit/44acd6d9ed157ad4842200c9d01f9c77a05fec3a))
+
+# [6.3.0-alpha.1](https://github.com/parse-community/parse-server/compare/6.2.0...6.3.0-alpha.1) (2023-06-18)
+
+
+### Bug Fixes
+
+* Cloud Code Trigger `afterSave` executes even if not set ([#8520](https://github.com/parse-community/parse-server/issues/8520)) ([afd0515](https://github.com/parse-community/parse-server/commit/afd0515e207bd947840579d3f245980dffa6f804))
+* GridFS file storage doesn't work with certain `enableSchemaHooks` settings ([#8467](https://github.com/parse-community/parse-server/issues/8467)) ([d4cda4b](https://github.com/parse-community/parse-server/commit/d4cda4b26c9bde8c812549b8780bea1cfabdb394))
+* Inaccurate table total row count for PostgreSQL ([#8511](https://github.com/parse-community/parse-server/issues/8511)) ([0823a02](https://github.com/parse-community/parse-server/commit/0823a02fbf80bc88dc403bc47e9f5c6597ea78b4))
+* LiveQuery server is not shut down properly when `handleShutdown` is called ([#8491](https://github.com/parse-community/parse-server/issues/8491)) ([967700b](https://github.com/parse-community/parse-server/commit/967700bdbc94c74f75ba84d2b3f4b9f3fd2dca0b))
+* Rate limit feature is incompatible with Node 14 ([#8578](https://github.com/parse-community/parse-server/issues/8578)) ([f911f2c](https://github.com/parse-community/parse-server/commit/f911f2cd3a8c45cd326272dcd681532764a3761e))
+* Unnecessary log entries by `extendSessionOnUse` ([#8562](https://github.com/parse-community/parse-server/issues/8562)) ([fd6a007](https://github.com/parse-community/parse-server/commit/fd6a0077f2e5cf83d65e52172ae5a950ab0f1eae))
+
+### Features
+
+* `extendSessionOnUse` to automatically renew Parse Sessions ([#8505](https://github.com/parse-community/parse-server/issues/8505)) ([6f885d3](https://github.com/parse-community/parse-server/commit/6f885d36b94902fdfea873fc554dee83589e6029))
+* Add new Parse Server option `preventSignupWithUnverifiedEmail` to prevent returning a user without session token on sign-up with unverified email address ([#8451](https://github.com/parse-community/parse-server/issues/8451)) ([82da308](https://github.com/parse-community/parse-server/commit/82da30842a55980aa90cb7680fbf6db37ee16dab))
+* Add option to change the log level of logs emitted by Cloud Functions ([#8530](https://github.com/parse-community/parse-server/issues/8530)) ([2caea31](https://github.com/parse-community/parse-server/commit/2caea310be412d82b04a85716bc769ccc410316d))
+* Add support for `$eq` query constraint in LiveQuery ([#8614](https://github.com/parse-community/parse-server/issues/8614)) ([656d673](https://github.com/parse-community/parse-server/commit/656d673cf5dea354e4f2b3d4dc2b29a41d311b3e))
+* Add zones for rate limiting by `ip`, `user`, `session`, `global` ([#8508](https://github.com/parse-community/parse-server/issues/8508)) ([03fba97](https://github.com/parse-community/parse-server/commit/03fba97e0549bfcaeee9f2fa4c9905dbcc91840e))
+* Allow `Parse.Object` pointers in Cloud Code arguments ([#8490](https://github.com/parse-community/parse-server/issues/8490)) ([28aeda3](https://github.com/parse-community/parse-server/commit/28aeda3f160efcbbcf85a85484a8d26567fa9761))
+
+### Reverts
+
+* fix: Inaccurate table total row count for PostgreSQL ([6722110](https://github.com/parse-community/parse-server/commit/6722110f203bc5fdcaa68cdf091cf9e7b48d1cff))
+
+# [6.1.0-alpha.20](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.19...6.1.0-alpha.20) (2023-06-09)
+
+
+### Features
+
+* Add zones for rate limiting by `ip`, `user`, `session`, `global` ([#8508](https://github.com/parse-community/parse-server/issues/8508)) ([03fba97](https://github.com/parse-community/parse-server/commit/03fba97e0549bfcaeee9f2fa4c9905dbcc91840e))
+
+# [6.1.0-alpha.19](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.18...6.1.0-alpha.19) (2023-06-08)
+
+
+### Bug Fixes
+
+* LiveQuery server is not shut down properly when `handleShutdown` is called ([#8491](https://github.com/parse-community/parse-server/issues/8491)) ([967700b](https://github.com/parse-community/parse-server/commit/967700bdbc94c74f75ba84d2b3f4b9f3fd2dca0b))
+
+# [6.1.0-alpha.18](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.17...6.1.0-alpha.18) (2023-06-08)
+
+
+### Features
+
+* Add support for `$eq` query constraint in LiveQuery ([#8614](https://github.com/parse-community/parse-server/issues/8614)) ([656d673](https://github.com/parse-community/parse-server/commit/656d673cf5dea354e4f2b3d4dc2b29a41d311b3e))
+
+# [6.1.0-alpha.17](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.16...6.1.0-alpha.17) (2023-06-07)
+
+
+### Features
+
+* Add new Parse Server option `preventSignupWithUnverifiedEmail` to prevent returning a user without session token on sign-up with unverified email address ([#8451](https://github.com/parse-community/parse-server/issues/8451)) ([82da308](https://github.com/parse-community/parse-server/commit/82da30842a55980aa90cb7680fbf6db37ee16dab))
+
+# [6.1.0-alpha.16](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.15...6.1.0-alpha.16) (2023-05-28)
+
+
+### Reverts
+
+* fix: Inaccurate table total row count for PostgreSQL ([6722110](https://github.com/parse-community/parse-server/commit/6722110f203bc5fdcaa68cdf091cf9e7b48d1cff))
+
+# [6.1.0-alpha.15](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.14...6.1.0-alpha.15) (2023-05-28)
+
+
+### Bug Fixes
+
+* Inaccurate table total row count for PostgreSQL ([#8511](https://github.com/parse-community/parse-server/issues/8511)) ([0823a02](https://github.com/parse-community/parse-server/commit/0823a02fbf80bc88dc403bc47e9f5c6597ea78b4))
+
+# [6.1.0-alpha.14](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.13...6.1.0-alpha.14) (2023-05-27)
+
+
+### Bug Fixes
+
+* Unnecessary log entries by `extendSessionOnUse` ([#8562](https://github.com/parse-community/parse-server/issues/8562)) ([fd6a007](https://github.com/parse-community/parse-server/commit/fd6a0077f2e5cf83d65e52172ae5a950ab0f1eae))
+
+### Features
+
+* Allow `Parse.Object` pointers in Cloud Code arguments ([#8490](https://github.com/parse-community/parse-server/issues/8490)) ([28aeda3](https://github.com/parse-community/parse-server/commit/28aeda3f160efcbbcf85a85484a8d26567fa9761))
+
+# [6.1.0-alpha.13](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.12...6.1.0-alpha.13) (2023-05-25)
+
+
+### Bug Fixes
+
+* Rate limit feature is incompatible with Node 14 ([#8578](https://github.com/parse-community/parse-server/issues/8578)) ([f911f2c](https://github.com/parse-community/parse-server/commit/f911f2cd3a8c45cd326272dcd681532764a3761e))
+
+# [6.1.0-alpha.12](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.11...6.1.0-alpha.12) (2023-05-19)
+
+
+### Bug Fixes
+
+* GridFS file storage doesn't work with certain `enableSchemaHooks` settings ([#8467](https://github.com/parse-community/parse-server/issues/8467)) ([d4cda4b](https://github.com/parse-community/parse-server/commit/d4cda4b26c9bde8c812549b8780bea1cfabdb394))
+
+# [6.1.0-alpha.11](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.10...6.1.0-alpha.11) (2023-05-17)
+
+
+### Features
+
+* `extendSessionOnUse` to automatically renew Parse Sessions ([#8505](https://github.com/parse-community/parse-server/issues/8505)) ([6f885d3](https://github.com/parse-community/parse-server/commit/6f885d36b94902fdfea873fc554dee83589e6029))
+
+# [6.1.0-alpha.10](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.9...6.1.0-alpha.10) (2023-05-12)
+
+
+### Bug Fixes
+
+* Cloud Code Trigger `afterSave` executes even if not set ([#8520](https://github.com/parse-community/parse-server/issues/8520)) ([afd0515](https://github.com/parse-community/parse-server/commit/afd0515e207bd947840579d3f245980dffa6f804))
+
+# [6.1.0-alpha.9](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.8...6.1.0-alpha.9) (2023-05-09)
+
+
+### Features
+
+* Add option to change the log level of logs emitted by Cloud Functions ([#8530](https://github.com/parse-community/parse-server/issues/8530)) ([2caea31](https://github.com/parse-community/parse-server/commit/2caea310be412d82b04a85716bc769ccc410316d))
+
+# [6.1.0-alpha.8](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.7...6.1.0-alpha.8) (2023-05-01)
+
+
+### Features
+
+* Allow multiple origins for header `Access-Control-Allow-Origin` ([#8517](https://github.com/parse-community/parse-server/issues/8517)) ([4f15539](https://github.com/parse-community/parse-server/commit/4f15539ac244aa2d393ac5177f7604b43f69e271))
+
+# [6.1.0-alpha.7](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.6...6.1.0-alpha.7) (2023-03-10)
+
+
+### Bug Fixes
+
+* Rate limiting across multiple servers via Redis not working ([#8469](https://github.com/parse-community/parse-server/issues/8469)) ([d9e347d](https://github.com/parse-community/parse-server/commit/d9e347d7413f30f58ffbb8397fc8b5ae23be6ff0))
+
+# [6.1.0-alpha.6](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.5...6.1.0-alpha.6) (2023-03-06)
+
+
+### Features
+
+* Add rate limiting across multiple servers via Redis ([#8394](https://github.com/parse-community/parse-server/issues/8394)) ([34833e4](https://github.com/parse-community/parse-server/commit/34833e42eec08b812b733be78df0535ab0e096b6))
+
+# [6.1.0-alpha.5](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.4...6.1.0-alpha.5) (2023-03-06)
+
+
+### Bug Fixes
+
+* LiveQuery can return incorrectly formatted date ([#8456](https://github.com/parse-community/parse-server/issues/8456)) ([4ce135a](https://github.com/parse-community/parse-server/commit/4ce135a4fe930776044bc8fd786a4e17a0144e03))
+
+# [6.1.0-alpha.4](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.3...6.1.0-alpha.4) (2023-03-06)
+
+
+### Bug Fixes
+
+* Parameters missing in `afterFind` trigger of authentication adapters ([#8458](https://github.com/parse-community/parse-server/issues/8458)) ([ce34747](https://github.com/parse-community/parse-server/commit/ce34747e8af54cb0b6b975da38f779a5955d2d59))
+
+# [6.1.0-alpha.3](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.2...6.1.0-alpha.3) (2023-03-06)
+
+
+### Features
+
+* Add `afterFind` trigger to authentication adapters ([#8444](https://github.com/parse-community/parse-server/issues/8444)) ([c793bb8](https://github.com/parse-community/parse-server/commit/c793bb88e7485743c7ceb65fe419cde75833ff33))
+
+# [6.1.0-alpha.2](https://github.com/parse-community/parse-server/compare/6.1.0-alpha.1...6.1.0-alpha.2) (2023-03-05)
+
+
+### Bug Fixes
+
+* Nested date is incorrectly decoded as empty object `{}` when fetching a Parse Object ([#8446](https://github.com/parse-community/parse-server/issues/8446)) ([22d2446](https://github.com/parse-community/parse-server/commit/22d2446dfea2bc339affc20535d181097e152acf))
+
+# [6.1.0-alpha.1](https://github.com/parse-community/parse-server/compare/6.0.0...6.1.0-alpha.1) (2023-03-03)
+
+
+### Bug Fixes
+
+* Security upgrade jsonwebtoken to 9.0.0 ([#8420](https://github.com/parse-community/parse-server/issues/8420)) ([f5bfe45](https://github.com/parse-community/parse-server/commit/f5bfe4571e82b2b7440d41f3cff0d49937398164))
+
+### Features
+
+* Add option `schemaCacheTtl` for schema cache pulling as alternative to `enableSchemaHooks` ([#8436](https://github.com/parse-community/parse-server/issues/8436)) ([b3b76de](https://github.com/parse-community/parse-server/commit/b3b76de71b1d4265689d052e7837c38ec1fa4323))
+* Add Parse Server option `resetPasswordSuccessOnInvalidEmail` to choose success or error response on password reset with invalid email ([#7551](https://github.com/parse-community/parse-server/issues/7551)) ([e5d610e](https://github.com/parse-community/parse-server/commit/e5d610e5e487ddab86409409ac3d7362aba8f59b))
+* Deprecate LiveQuery `fields` option in favor of `keys` for semantic consistency ([#8388](https://github.com/parse-community/parse-server/issues/8388)) ([a49e323](https://github.com/parse-community/parse-server/commit/a49e323d5ae640bff1c6603ec37fdaddb9328dd1))
+* Export `AuthAdapter` to make it available for extension with custom authentication adapters ([#8443](https://github.com/parse-community/parse-server/issues/8443)) ([40c1961](https://github.com/parse-community/parse-server/commit/40c196153b8efa12ae384c1c0092b2ed60a260d6))
+
+# [6.0.0-alpha.35](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.34...6.0.0-alpha.35) (2023-02-27)
+
+
+### Features
+
+* Add option `schemaCacheTtl` for schema cache pulling as alternative to `enableSchemaHooks` ([#8436](https://github.com/parse-community/parse-server/issues/8436)) ([b3b76de](https://github.com/parse-community/parse-server/commit/b3b76de71b1d4265689d052e7837c38ec1fa4323))
+
+# [6.0.0-alpha.34](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.33...6.0.0-alpha.34) (2023-02-24)
+
+
+### Features
+
+* Add Parse Server option `resetPasswordSuccessOnInvalidEmail` to choose success or error response on password reset with invalid email ([#7551](https://github.com/parse-community/parse-server/issues/7551)) ([e5d610e](https://github.com/parse-community/parse-server/commit/e5d610e5e487ddab86409409ac3d7362aba8f59b))
+
+# [6.0.0-alpha.33](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.32...6.0.0-alpha.33) (2023-02-17)
+
+
+### Features
+
+* Deprecate LiveQuery `fields` option in favor of `keys` for semantic consistency ([#8388](https://github.com/parse-community/parse-server/issues/8388)) ([a49e323](https://github.com/parse-community/parse-server/commit/a49e323d5ae640bff1c6603ec37fdaddb9328dd1))
+
+# [6.0.0-alpha.32](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.31...6.0.0-alpha.32) (2023-02-07)
+
+
+### Bug Fixes
+
+* Security upgrade jsonwebtoken to 9.0.0 ([#8420](https://github.com/parse-community/parse-server/issues/8420)) ([f5bfe45](https://github.com/parse-community/parse-server/commit/f5bfe4571e82b2b7440d41f3cff0d49937398164))
+
+# [6.0.0-alpha.31](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.30...6.0.0-alpha.31) (2023-01-31)
+
+
+### Bug Fixes
+
+* Parse Server option `requestKeywordDenylist` can be bypassed via Cloud Code Webhooks or Triggers; fixes security vulnerability [GHSA-xprv-wvh7-qqqx](https://github.com/parse-community/parse-server/security/advisories/GHSA-xprv-wvh7-qqqx) ([#8302](https://github.com/parse-community/parse-server/issues/8302)) ([6728da1](https://github.com/parse-community/parse-server/commit/6728da1e3591db1e27031d335d64d8f25546a06f))
+* Prototype pollution via Cloud Code Webhooks; fixes security vulnerability [GHSA-93vw-8fm5-p2jf](https://github.com/parse-community/parse-server/security/advisories/GHSA-93vw-8fm5-p2jf) ([#8305](https://github.com/parse-community/parse-server/issues/8305)) ([60c5a73](https://github.com/parse-community/parse-server/commit/60c5a73d257e0d536056b38bdafef8b7130524d8))
+* Remote code execution via MongoDB BSON parser through prototype pollution; fixes security vulnerability [GHSA-prm5-8g2m-24gg](https://github.com/parse-community/parse-server/security/advisories/GHSA-prm5-8g2m-24gg) ([#8295](https://github.com/parse-community/parse-server/issues/8295)) ([50eed3c](https://github.com/parse-community/parse-server/commit/50eed3cffe80fadfb4bdac52b2783a18da2cfc4f))
+
+# [6.0.0-alpha.30](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.29...6.0.0-alpha.30) (2023-01-27)
+
+
+### Bug Fixes
+
+* Schema without class level permissions may cause error ([#8409](https://github.com/parse-community/parse-server/issues/8409)) ([aa2cd51](https://github.com/parse-community/parse-server/commit/aa2cd51b703388d925e4572e5c2b2d883c68e49c))
+
+# [6.0.0-alpha.29](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.28...6.0.0-alpha.29) (2023-01-26)
+
+
+### Features
+
+* Upgrade to Parse JavaScript SDK 4 ([#8332](https://github.com/parse-community/parse-server/issues/8332)) ([9092874](https://github.com/parse-community/parse-server/commit/9092874a9a482a24dfdce1dce56615702999d6b8))
+
 # [6.0.0-alpha.28](https://github.com/parse-community/parse-server/compare/6.0.0-alpha.27...6.0.0-alpha.28) (2023-01-25)
 
 

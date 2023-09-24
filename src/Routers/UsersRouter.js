@@ -189,7 +189,12 @@ export class UsersRouter extends ClassesRouter {
     const user = await this._authenticateUserFromRequest(req);
     const authData = req.body && req.body.authData;
     // Check if user has provided their required auth providers
-    Auth.checkIfUserHasProvidedConfiguredProvidersForLogin(authData, user.authData, req.config);
+    Auth.checkIfUserHasProvidedConfiguredProvidersForLogin(
+      req,
+      authData,
+      user.authData,
+      req.config
+    );
 
     let authDataResponse;
     let validatedAuthData;
@@ -254,7 +259,8 @@ export class UsersRouter extends ClassesRouter {
       req.auth,
       Parse.User.fromJSON(Object.assign({ className: '_User' }, user)),
       null,
-      req.config
+      req.config,
+      req.info.context
     );
 
     // If we have some new validated authData update directly
@@ -286,12 +292,14 @@ export class UsersRouter extends ClassesRouter {
       { ...req.auth, user: afterLoginUser },
       afterLoginUser,
       null,
-      req.config
+      req.config,
+      req.info.context
     );
 
     if (authDataResponse) {
       user.authDataResponse = authDataResponse;
     }
+    await req.config.authDataManager.runAfterFind(req, user.authData);
 
     return { response: user };
   }
@@ -414,7 +422,7 @@ export class UsersRouter extends ClassesRouter {
     }
   }
 
-  handleResetRequest(req) {
+  async handleResetRequest(req) {
     this._throwOnBadEmailConfig(req);
 
     const { email } = req.body;
@@ -428,27 +436,25 @@ export class UsersRouter extends ClassesRouter {
       );
     }
     const userController = req.config.userController;
-    return userController.sendPasswordResetEmail(email).then(
-      () => {
-        return Promise.resolve({
-          response: {},
-        });
-      },
-      err => {
-        if (err.code === Parse.Error.OBJECT_NOT_FOUND) {
-          // Return success so that this endpoint can't
-          // be used to enumerate valid emails
-          return Promise.resolve({
+    try {
+      await userController.sendPasswordResetEmail(email);
+      return {
+        response: {},
+      };
+    } catch (err) {
+      if (err.code === Parse.Error.OBJECT_NOT_FOUND) {
+        if (req.config.passwordPolicy?.resetPasswordSuccessOnInvalidEmail ?? true) {
+          return {
             response: {},
-          });
-        } else {
-          throw err;
+          };
         }
+        err.message = `A user with that email does not exist.`;
       }
-    );
+      throw err;
+    }
   }
 
-  handleVerificationEmailRequest(req) {
+  async handleVerificationEmailRequest(req) {
     this._throwOnBadEmailConfig(req);
 
     const { email } = req.body;
@@ -462,25 +468,25 @@ export class UsersRouter extends ClassesRouter {
       );
     }
 
-    return req.config.database.find('_User', { email: email }).then(results => {
-      if (!results.length || results.length < 1) {
-        throw new Parse.Error(Parse.Error.EMAIL_NOT_FOUND, `No user found with email ${email}`);
-      }
-      const user = results[0];
+    const results = await req.config.database.find('_User', { email: email });
+    if (!results.length || results.length < 1) {
+      throw new Parse.Error(Parse.Error.EMAIL_NOT_FOUND, `No user found with email ${email}`);
+    }
+    const user = results[0];
 
-      // remove password field, messes with saving on postgres
-      delete user.password;
+    // remove password field, messes with saving on postgres
+    delete user.password;
 
-      if (user.emailVerified) {
-        throw new Parse.Error(Parse.Error.OTHER_CAUSE, `Email ${email} is already verified.`);
-      }
+    if (user.emailVerified) {
+      throw new Parse.Error(Parse.Error.OTHER_CAUSE, `Email ${email} is already verified.`);
+    }
 
-      const userController = req.config.userController;
-      return userController.regenerateEmailVerifyToken(user).then(() => {
-        userController.sendVerificationEmail(user);
-        return { response: {} };
-      });
-    });
+    const userController = req.config.userController;
+    const send = await userController.regenerateEmailVerifyToken(user, req.auth.isMaster);
+    if (send) {
+      userController.sendVerificationEmail(user, req);
+    }
+    return { response: {} };
   }
 
   async handleChallenge(req) {

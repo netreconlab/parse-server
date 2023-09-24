@@ -2,11 +2,22 @@
 const Auth = require('../lib/Auth');
 const UserController = require('../lib/Controllers/UserController').UserController;
 const Config = require('../lib/Config');
+const ParseServer = require('../lib/index').ParseServer;
+const triggers = require('../lib/triggers');
 const validatorFail = () => {
   throw 'you are not authorized';
 };
 
 describe('ParseLiveQuery', function () {
+  beforeEach(() => {
+    Parse.CoreManager.getLiveQueryController().setDefaultLiveQueryClient(null);
+  });
+  afterEach(async () => {
+    const client = await Parse.CoreManager.getLiveQueryController().getDefaultLiveQueryClient();
+    client.close();
+    // Wait for live query client to disconnect
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  });
   it('access user on onLiveQueryEvent disconnect', async done => {
     await reconfigureServer({
       liveQuery: {
@@ -16,7 +27,6 @@ describe('ParseLiveQuery', function () {
       verbose: false,
       silent: true,
     });
-    Parse.CoreManager.getLiveQueryController().setDefaultLiveQueryClient(null);
     const requestedUser = new Parse.User();
     requestedUser.setUsername('username');
     requestedUser.setPassword('password');
@@ -513,76 +523,67 @@ describe('ParseLiveQuery', function () {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
     const object = new TestObject();
     await object.save();
-
-    Parse.Cloud.beforeSubscribe('TestObject', req => {
-      expect(req.op).toBe('subscribe');
-      expect(req.requestId).toBe(1);
-      expect(req.query).toBeDefined();
-      expect(req.user).toBeUndefined();
-    });
-
-    Parse.Cloud.beforeConnect(req => {
-      expect(req.event).toBe('connect');
-      expect(req.clients).toBe(0);
-      expect(req.subscriptions).toBe(0);
-      expect(req.useMasterKey).toBe(false);
-      expect(req.installationId).toBeDefined();
-      expect(req.user).toBeUndefined();
-      expect(req.client).toBeDefined();
-    });
+    const hooks = {
+      beforeSubscribe(req) {
+        expect(req.op).toBe('subscribe');
+        expect(req.requestId).toBe(1);
+        expect(req.query).toBeDefined();
+        expect(req.user).toBeUndefined();
+      },
+      beforeConnect(req) {
+        expect(req.event).toBe('connect');
+        expect(req.clients).toBe(0);
+        expect(req.subscriptions).toBe(0);
+        expect(req.useMasterKey).toBe(false);
+        expect(req.installationId).toBeDefined();
+        expect(req.user).toBeUndefined();
+        expect(req.client).toBeDefined();
+      },
+    };
+    spyOn(hooks, 'beforeSubscribe').and.callThrough();
+    spyOn(hooks, 'beforeConnect').and.callThrough();
+    Parse.Cloud.beforeSubscribe('TestObject', hooks.beforeSubscribe);
+    Parse.Cloud.beforeConnect(hooks.beforeConnect);
     const query = new Parse.Query(TestObject);
     query.equalTo('objectId', object.id);
     const subscription = await query.subscribe();
     subscription.on('update', object => {
       expect(object.get('foo')).toBe('bar');
+      expect(hooks.beforeConnect).toHaveBeenCalled();
+      expect(hooks.beforeSubscribe).toHaveBeenCalled();
       done();
     });
     object.set({ foo: 'bar' });
     await object.save();
   });
 
-  it('can handle beforeConnect validation function', async done => {
+  it('can handle beforeConnect validation function', async () => {
     await reconfigureServer({
       liveQuery: {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
 
     const object = new TestObject();
     await object.save();
-
     Parse.Cloud.beforeConnect(() => {}, validatorFail);
-    let complete = false;
-    Parse.LiveQuery.on('error', error => {
-      Parse.LiveQuery.removeAllListeners('error');
-      if (complete) {
-        return;
-      }
-      complete = true;
-      expect(error).toBe('you are not authorized');
-      done();
-    });
     const query = new Parse.Query(TestObject);
     query.equalTo('objectId', object.id);
-    await query.subscribe();
+    await expectAsync(query.subscribe()).toBeRejectedWith(
+      new Parse.Error(Parse.Error.VALIDATION_ERROR, 'you are not authorized')
+    );
   });
 
-  it('can handle beforeSubscribe validation function', async done => {
+  it('can handle beforeSubscribe validation function', async () => {
     await reconfigureServer({
       liveQuery: {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
     const object = new TestObject();
     await object.save();
@@ -590,11 +591,9 @@ describe('ParseLiveQuery', function () {
     Parse.Cloud.beforeSubscribe(TestObject, () => {}, validatorFail);
     const query = new Parse.Query(TestObject);
     query.equalTo('objectId', object.id);
-    const subscription = await query.subscribe();
-    subscription.on('error', error => {
-      expect(error).toBe('you are not authorized');
-      done();
-    });
+    await expectAsync(query.subscribe()).toBeRejectedWith(
+      new Parse.Error(Parse.Error.VALIDATION_ERROR, 'you are not authorized')
+    );
   });
 
   it('can handle afterEvent validation function', async done => {
@@ -620,14 +619,12 @@ describe('ParseLiveQuery', function () {
     await object.save();
   });
 
-  it('can handle beforeConnect error', async done => {
+  it('can handle beforeConnect error', async () => {
     await reconfigureServer({
       liveQuery: {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
     const object = new TestObject();
     await object.save();
@@ -635,14 +632,9 @@ describe('ParseLiveQuery', function () {
     Parse.Cloud.beforeConnect(() => {
       throw new Error('You shall not pass!');
     });
-    Parse.LiveQuery.on('error', error => {
-      Parse.LiveQuery.removeAllListeners('error');
-      expect(error).toBe('You shall not pass!');
-      done();
-    });
     const query = new Parse.Query(TestObject);
     query.equalTo('objectId', object.id);
-    await query.subscribe();
+    await expectAsync(query.subscribe()).toBeRejectedWith(new Error('You shall not pass!'));
   });
 
   it('can log on beforeConnect throw', async () => {
@@ -651,8 +643,6 @@ describe('ParseLiveQuery', function () {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
 
     const logger = require('../lib/logger').logger;
@@ -664,22 +654,20 @@ describe('ParseLiveQuery', function () {
       foo.bar();
       /* eslint-enable no-undef */
     });
-    new Parse.Query(TestObject).subscribe();
-    await new Promise(resolve => Parse.LiveQuery.on('error', resolve));
-    Parse.LiveQuery.removeAllListeners('error');
+    await expectAsync(new Parse.Query(TestObject).subscribe()).toBeRejectedWith(
+      new Error('foo is not defined')
+    );
     expect(logger.error).toHaveBeenCalledWith(
       `Failed running beforeConnect for session ${token} with:\n Error: {"message":"foo is not defined","code":141}`
     );
   });
 
-  it('can handle beforeSubscribe error', async done => {
+  it('can handle beforeSubscribe error', async () => {
     await reconfigureServer({
       liveQuery: {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
     const object = new TestObject();
     await object.save();
@@ -687,17 +675,9 @@ describe('ParseLiveQuery', function () {
     Parse.Cloud.beforeSubscribe(TestObject, () => {
       throw new Error('You shall not subscribe!');
     });
-    Parse.LiveQuery.on('error', error => {
-      expect(error).toBe('You shall not subscribe!');
-    });
     const query = new Parse.Query(TestObject);
     query.equalTo('objectId', object.id);
-    const subscription = await query.subscribe();
-    subscription.on('error', error => {
-      Parse.LiveQuery.removeAllListeners('error');
-      expect(error).toBe('You shall not subscribe!');
-      done();
-    });
+    await expectAsync(query.subscribe()).toBeRejectedWith(new Error('You shall not subscribe!'));
   });
 
   it('can log on beforeSubscribe error', async () => {
@@ -706,8 +686,6 @@ describe('ParseLiveQuery', function () {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
 
     const logger = require('../lib/logger').logger;
@@ -720,8 +698,7 @@ describe('ParseLiveQuery', function () {
     });
 
     const query = new Parse.Query(TestObject);
-    const subscription = await query.subscribe();
-    await new Promise(resolve => subscription.on('error', resolve));
+    await expectAsync(query.subscribe()).toBeRejectedWith(new Error('foo is not defined'));
 
     expect(logger.error).toHaveBeenCalledWith(
       `Failed running beforeSubscribe on TestObject for session undefined with:\n Error: {"message":"foo is not defined","code":141}`
@@ -734,29 +711,35 @@ describe('ParseLiveQuery', function () {
         classNames: ['TestObject'],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
     });
-    Parse.Cloud.beforeSubscribe(TestObject, request => {
-      const query = request.query;
-      query.equalTo('yolo', 'abc');
-    });
-
+    const hook = {
+      beforeSubscribe(request) {
+        request.query.equalTo('yolo', 'abc');
+      },
+    };
+    spyOn(hook, 'beforeSubscribe').and.callThrough();
+    Parse.Cloud.beforeSubscribe('TestObject', hook.beforeSubscribe);
     const object = new TestObject();
     await object.save();
 
-    const query = new Parse.Query(TestObject);
+    const query = new Parse.Query('TestObject');
     query.equalTo('objectId', object.id);
     const subscription = await query.subscribe();
-
     subscription.on('update', () => {
-      fail();
+      fail('beforeSubscribe should restrict subscription');
     });
-    object.set({ foo: 'bar' });
+    subscription.on('enter', object => {
+      if (object.get('yolo') === 'abc') {
+        done();
+      } else {
+        fail('beforeSubscribe should restrict queries');
+      }
+    });
+    object.set({ yolo: 'bar' });
     await object.save();
-    setTimeout(async () => {
-      done();
-    }, 1000);
+    object.set({ yolo: 'abc' });
+    await object.save();
+    expect(hook.beforeSubscribe).toHaveBeenCalled();
   });
 
   it('can return a new beforeSubscribe query', async done => {
@@ -954,26 +937,15 @@ describe('ParseLiveQuery', function () {
     await Parse.User.logIn('username', 'password');
   });
 
-  it('prevent liveQuery on Session class when not logged in', async done => {
+  it('prevent liveQuery on Session class when not logged in', async () => {
     await reconfigureServer({
       liveQuery: {
         classNames: [Parse.Session],
       },
       startLiveQueryServer: true,
-      verbose: false,
-      silent: true,
-    });
-
-    Parse.LiveQuery.on('error', error => {
-      expect(error).toBe('Invalid session token');
     });
     const query = new Parse.Query(Parse.Session);
-    const subscription = await query.subscribe();
-    subscription.on('error', error => {
-      Parse.LiveQuery.removeAllListeners('error');
-      expect(error).toBe('Invalid session token');
-      done();
-    });
+    await expectAsync(query.subscribe()).toBeRejectedWith(new Error('Invalid session token'));
   });
 
   it('handle invalid websocket payload length', async done => {
@@ -1243,12 +1215,58 @@ describe('ParseLiveQuery', function () {
     await object.save();
   });
 
-  afterEach(async function (done) {
+  it('does shutdown liveQuery server', async () => {
+    await reconfigureServer({ appId: 'test_app_id' });
+    const config = {
+      appId: 'hello_test',
+      masterKey: 'world',
+      port: 1345,
+      mountPath: '/1',
+      serverURL: 'http://localhost:1345/1',
+      liveQuery: {
+        classNames: ['Yolo'],
+      },
+      startLiveQueryServer: true,
+    };
+    if (process.env.PARSE_SERVER_TEST_DB === 'postgres') {
+      config.databaseAdapter = new databaseAdapter.constructor({
+        uri: databaseURI,
+        collectionPrefix: 'test_',
+      });
+      config.filesAdapter = defaultConfiguration.filesAdapter;
+    }
+    const server = await ParseServer.startApp(config);
     const client = await Parse.CoreManager.getLiveQueryController().getDefaultLiveQueryClient();
-    client.close();
-    // Wait for live query client to disconnect
-    setTimeout(() => {
-      done();
-    }, 1000);
+    client.serverURL = 'ws://localhost:1345/1';
+    const query = await new Parse.Query('Yolo').subscribe();
+    await Promise.all([
+      server.handleShutdown(),
+      new Promise(resolve => query.on('close', resolve)),
+    ]);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    expect(server.liveQueryServer.server.address()).toBeNull();
+    expect(server.liveQueryServer.subscriber.isOpen).toBeFalse();
+    await new Promise(resolve => server.server.close(resolve));
+  });
+
+  it('prevent afterSave trigger if not exists', async () => {
+    await reconfigureServer({
+      liveQuery: {
+        classNames: ['TestObject'],
+      },
+      startLiveQueryServer: true,
+      verbose: false,
+      silent: true,
+    });
+    spyOn(triggers, 'maybeRunTrigger').and.callThrough();
+    const object1 = new TestObject();
+    const object2 = new TestObject();
+    const object3 = new TestObject();
+    await Parse.Object.saveAll([object1, object2, object3]);
+
+    expect(triggers.maybeRunTrigger).toHaveBeenCalledTimes(0);
+    expect(object1.id).toBeDefined();
+    expect(object2.id).toBeDefined();
+    expect(object3.id).toBeDefined();
   });
 });

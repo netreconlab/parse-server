@@ -7,8 +7,10 @@ import net from 'net';
 import AppCache from './cache';
 import DatabaseController from './Controllers/DatabaseController';
 import { logLevels as validLogLevels } from './Controllers/LoggerController';
+import { version } from '../package.json';
 import {
   AccountLockoutOptions,
+  DatabaseOptions,
   FileUploadOptions,
   IdempotencyOptions,
   LogLevels,
@@ -17,13 +19,14 @@ import {
   SchemaOptions,
   SecurityOptions,
 } from './Options/Definitions';
+import ParseServer from './cloud-code/Parse.Server';
 
 function removeTrailingSlash(str) {
   if (!str) {
     return str;
   }
   if (str.endsWith('/')) {
-    str = str.substr(0, str.length - 1);
+    str = str.substring(0, str.length - 1);
   }
   return str;
 }
@@ -48,27 +51,25 @@ export class Config {
     config.generateEmailVerifyTokenExpiresAt = config.generateEmailVerifyTokenExpiresAt.bind(
       config
     );
+    config.version = version;
     return config;
   }
 
   static put(serverConfiguration) {
-    Config.validate(serverConfiguration);
+    Config.validateOptions(serverConfiguration);
+    Config.validateControllers(serverConfiguration);
     AppCache.put(serverConfiguration.appId, serverConfiguration);
     Config.setupPasswordValidator(serverConfiguration.passwordPolicy);
     return serverConfiguration;
   }
 
-  static validate({
-    verifyUserEmails,
-    userController,
-    appName,
+  static validateOptions({
     publicServerURL,
     revokeSessionOnPasswordReset,
     expireInactiveSessions,
     sessionLength,
     defaultLimit,
     maxLimit,
-    emailVerifyTokenValidityDuration,
     accountLockout,
     passwordPolicy,
     masterKeyIps,
@@ -78,7 +79,6 @@ export class Config {
     readOnlyMasterKey,
     allowHeaders,
     idempotencyOptions,
-    emailVerifyTokenReuseIfValid,
     fileUpload,
     pages,
     security,
@@ -88,6 +88,8 @@ export class Config {
     allowExpiredAuthDataToken,
     logLevels,
     rateLimit,
+    databaseOptions,
+    extendSessionOnUse,
   }) {
     if (masterKey === readOnlyMasterKey) {
       throw new Error('masterKey and readOnlyMasterKey should be different');
@@ -97,23 +99,16 @@ export class Config {
       throw new Error('masterKey and maintenanceKey should be different');
     }
 
-    const emailAdapter = userController.adapter;
-    if (verifyUserEmails) {
-      this.validateEmailConfiguration({
-        emailAdapter,
-        appName,
-        publicServerURL,
-        emailVerifyTokenValidityDuration,
-        emailVerifyTokenReuseIfValid,
-      });
-    }
-
     this.validateAccountLockoutPolicy(accountLockout);
     this.validatePasswordPolicy(passwordPolicy);
     this.validateFileUploadOptions(fileUpload);
 
     if (typeof revokeSessionOnPasswordReset !== 'boolean') {
       throw 'revokeSessionOnPasswordReset must be a boolean value';
+    }
+
+    if (typeof extendSessionOnUse !== 'boolean') {
+      throw 'extendSessionOnUse must be a boolean value';
     }
 
     if (publicServerURL) {
@@ -136,6 +131,27 @@ export class Config {
     this.validateRequestKeywordDenylist(requestKeywordDenylist);
     this.validateRateLimit(rateLimit);
     this.validateLogLevels(logLevels);
+    this.validateDatabaseOptions(databaseOptions);
+  }
+
+  static validateControllers({
+    verifyUserEmails,
+    userController,
+    appName,
+    publicServerURL,
+    emailVerifyTokenValidityDuration,
+    emailVerifyTokenReuseIfValid,
+  }) {
+    const emailAdapter = userController.adapter;
+    if (verifyUserEmails) {
+      this.validateEmailConfiguration({
+        emailAdapter,
+        appName,
+        publicServerURL,
+        emailVerifyTokenValidityDuration,
+        emailVerifyTokenReuseIfValid,
+      });
+    }
   }
 
   static validateRequestKeywordDenylist(requestKeywordDenylist) {
@@ -376,6 +392,13 @@ export class Config {
       if (passwordPolicy.resetTokenReuseIfValid && !passwordPolicy.resetTokenValidityDuration) {
         throw 'You cannot use resetTokenReuseIfValid without resetTokenValidityDuration';
       }
+
+      if (
+        passwordPolicy.resetPasswordSuccessOnInvalidEmail &&
+        typeof passwordPolicy.resetPasswordSuccessOnInvalidEmail !== 'boolean'
+      ) {
+        throw 'resetPasswordSuccessOnInvalidEmail must be a boolean value';
+      }
     }
   }
 
@@ -444,6 +467,11 @@ export class Config {
       fileUpload.enableForAuthenticatedUser = FileUploadOptions.enableForAuthenticatedUser.default;
     } else if (typeof fileUpload.enableForAuthenticatedUser !== 'boolean') {
       throw 'fileUpload.enableForAuthenticatedUser must be a boolean value.';
+    }
+    if (fileUpload.fileExtensions === undefined) {
+      fileUpload.fileExtensions = FileUploadOptions.fileExtensions.default;
+    } else if (!Array.isArray(fileUpload.fileExtensions)) {
+      throw 'fileUpload.fileExtensions must be an array.';
     }
   }
 
@@ -526,6 +554,25 @@ export class Config {
     }
   }
 
+  static validateDatabaseOptions(databaseOptions) {
+    if (databaseOptions == undefined) {
+      return;
+    }
+    if (Object.prototype.toString.call(databaseOptions) !== '[object Object]') {
+      throw `databaseOptions must be an object`;
+    }
+    if (databaseOptions.enableSchemaHooks === undefined) {
+      databaseOptions.enableSchemaHooks = DatabaseOptions.enableSchemaHooks.default;
+    } else if (typeof databaseOptions.enableSchemaHooks !== 'boolean') {
+      throw `databaseOptions.enableSchemaHooks must be a boolean`;
+    }
+    if (databaseOptions.schemaCacheTtl === undefined) {
+      databaseOptions.schemaCacheTtl = DatabaseOptions.schemaCacheTtl.default;
+    } else if (typeof databaseOptions.schemaCacheTtl !== 'number') {
+      throw `databaseOptions.schemaCacheTtl must be a number`;
+    }
+  }
+
   static validateRateLimit(rateLimit) {
     if (!rateLimit) {
       return;
@@ -565,6 +612,11 @@ export class Config {
       if (option.errorResponseMessage && typeof option.errorResponseMessage !== 'string') {
         throw `rateLimit.errorResponseMessage must be a string`;
       }
+      const options = Object.keys(ParseServer.RateLimitZone);
+      if (option.zone && !options.includes(option.zone)) {
+        const formatter = new Intl.ListFormat('en', { style: 'short', type: 'disjunction' });
+        throw `rateLimit.zone must be one of ${formatter.format(options)}`;
+      }
     }
   }
 
@@ -590,6 +642,16 @@ export class Config {
     }
     var now = new Date();
     return new Date(now.getTime() + this.sessionLength * 1000);
+  }
+
+  unregisterRateLimiters() {
+    let i = this.rateLimits?.length;
+    while (i--) {
+      const limit = this.rateLimits[i];
+      if (limit.cloud) {
+        this.rateLimits.splice(i, 1);
+      }
+    }
   }
 
   get invalidLinkURL() {

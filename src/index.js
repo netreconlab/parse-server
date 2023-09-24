@@ -6,7 +6,7 @@ import RedisCacheAdapter from './Adapters/Cache/RedisCacheAdapter';
 import LRUCacheAdapter from './Adapters/Cache/LRUCache.js';
 import * as TestUtils from './TestUtils';
 import * as SchemaMigrations from './SchemaMigrations/Migrations';
-
+import AuthAdapter from './Adapters/Auth/AuthAdapter';
 import { useExternal } from './deprecated';
 import { getLogger } from './logger';
 import { PushWorker } from './Push/PushWorker';
@@ -43,4 +43,5 @@ export {
   ParseGraphQLServer,
   _ParseServer as ParseServer,
   SchemaMigrations,
+  AuthAdapter,
 };

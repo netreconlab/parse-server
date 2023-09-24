@@ -367,6 +367,22 @@ describe('server', () => {
     });
   });
 
+  it('should throw when extendSessionOnUse is invalid', async () => {
+    await expectAsync(
+      reconfigureServer({
+        extendSessionOnUse: 'yolo',
+      })
+    ).toBeRejectedWith('extendSessionOnUse must be a boolean value');
+  });
+
+  it('should throw when revokeSessionOnPasswordReset is invalid', async () => {
+    await expectAsync(
+      reconfigureServer({
+        revokeSessionOnPasswordReset: 'yolo',
+      })
+    ).toBeRejectedWith('revokeSessionOnPasswordReset must be a boolean value');
+  });
+
   it('fails if the session length is not a number', done => {
     reconfigureServer({ sessionLength: 'test' })
       .then(done.fail)
@@ -558,7 +574,7 @@ describe('server', () => {
   });
 
   it('can get starting state', async () => {
-    await reconfigureServer({ appId: 'test2', silent: false });
+    await reconfigureServer({ appId: 'test2' });
     const parseServer = new ParseServer.ParseServer({
       ...defaultConfiguration,
       appId: 'test2',
@@ -587,6 +603,7 @@ describe('server', () => {
 
   it('should not fail when Google signin is introduced without the optional clientId', done => {
     const jwt = require('jsonwebtoken');
+    const authUtils = require('../lib/Adapters/Auth/utils');
 
     reconfigureServer({
       auth: { google: {} },
@@ -599,7 +616,7 @@ describe('server', () => {
           sub: 'the_user_id',
         };
         const fakeDecodedToken = { header: { kid: '123', alg: 'RS256' } };
-        spyOn(jwt, 'decode').and.callFake(() => fakeDecodedToken);
+        spyOn(authUtils, 'getHeaderFromToken').and.callFake(() => fakeDecodedToken);
         spyOn(jwt, 'verify').and.callFake(() => fakeClaim);
         const user = new Parse.User();
         user
