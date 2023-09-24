@@ -180,7 +180,7 @@ jobs:
             NODE_VERSION: 18.12.1
       fail-fast: false
     name: ${{ matrix.name }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     services:
       redis:
@@ -245,7 +245,7 @@ jobs:
             NODE_VERSION: 19.3.0
       fail-fast: false
     name: ${{ matrix.name }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     services:
       redis:
