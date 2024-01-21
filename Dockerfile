@@ -24,7 +24,7 @@ RUN npm ci --omit=dev --ignore-scripts \
 ############################################################
 # Release stage
 ############################################################
-FROM node:lts-alpine AS release
+FROM node:18-alpine AS release
 
 VOLUME /parse-server/cloud /parse-server/config
 
