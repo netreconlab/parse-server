@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     permissions:
       contents: read
       packages: write
@@ -47,7 +47,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-             latest=false
+             latest=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
