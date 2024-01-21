@@ -1,7 +1,7 @@
 ############################################################
 # Build stage
 ############################################################
-FROM node:lts-alpine AS build
+FROM node:18-alpine AS build
 
 RUN apk --no-cache add git
 WORKDIR /tmp
