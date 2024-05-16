@@ -2,10 +2,10 @@ name: docker
 
 on:
   push:
-    branches: [ docker ]
+    branches: [ release ]
     tags: [ '*.*.*' ]
   pull_request:
-    branches: [ docker ]
+    branches: [ release ]
 
 env:
   REGISTRY: docker.io
@@ -47,7 +47,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-             latest=false
+             latest=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
