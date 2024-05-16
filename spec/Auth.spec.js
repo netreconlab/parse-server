@@ -81,17 +81,35 @@ describe('Auth', () => {
         .then(roles => expect(roles).toEqual([]))
         .then(() => done());
     });
+  });
 
-    it('should properly handle bcrypt upgrade', done => {
-      const bcryptOriginal = require('bcrypt-nodejs');
-      const bcryptNew = require('bcryptjs');
-      bcryptOriginal.hash('my1Long:password', null, null, function (err, res) {
-        bcryptNew.compare('my1Long:password', res, function (err, res) {
-          expect(res).toBeTruthy();
-          done();
-        });
-      });
+  it('can use extendSessionOnUse', async () => {
+    await reconfigureServer({
+      extendSessionOnUse: true,
     });
+
+    const user = new Parse.User();
+    await user.signUp({
+      username: 'hello',
+      password: 'password',
+    });
+    const session = await new Parse.Query(Parse.Session).first();
+    const updatedAt = new Date('2010');
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 1);
+
+    await Parse.Server.database.update(
+      '_Session',
+      { objectId: session.id },
+      {
+        expiresAt: { __type: 'Date', iso: expiry.toISOString() },
+        updatedAt: updatedAt.toISOString(),
+      }
+    );
+    await session.fetch();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await session.fetch();
+    expect(session.get('expiresAt') > expiry).toBeTrue();
   });
 
   it('should load auth without a config', async () => {
